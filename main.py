@@ -54,6 +54,9 @@ def main(argv):
     elif algorithm == "popularity_algorithm":
         img_out = popularity_algorithm(img_pil, int(params[0]), int(params[1]), channels)
         save = True
+    elif algorithm == "mediancut_algorithm":
+        img_out = mediancut_algorithm(img_pil, int(params[0]), channels)
+        save = True
     elif algorithm == "show_histogram":
         compute_histogram(img_np, int(params[1]),  channels, True)
     elif algorithm == "show_image":
