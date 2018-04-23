@@ -1,6 +1,6 @@
 from Utils import *
 import numpy as np
-from PIL import Image
+#from PIL import Image
 
 
 def popularity_algorithm(img, ncolors, ball_size, channels):
@@ -48,6 +48,7 @@ def popularity_algorithm(img, ncolors, ball_size, channels):
                     ind = k
                     old_dist = dist
             img[i, j] = most_pop[:][ind]
+
     return img
 
 
@@ -112,5 +113,36 @@ def mediancut_algorithm(img, ncolors, channels):
                     old_dist = dist
                     new_color = color
             img[i, j] = new_color
+
     return img
 
+def quantization(img, channels, r_bits=8, g_bits=8, b_bits=8):
+    if r_bits <= 16 and g_bits <= 16 and b_bits <= 16:
+        if r_bits < 8 or g_bits < 8 or b_bits < 8:
+            img = mediancut_algorithm(img, 2 ** (r_bits+ g_bits + b_bits), channels)
+            #img_np = popularity_algorithm(img, 2 ** (r_bits+ g_bits + b_bits), 10, channels)
+
+        elif r_bits is not 8 and g_bits is not 8 and b_bits is not 8:
+            img_np = pil_to_np(img)
+
+            height = np.size(img_np,0)
+            width = np.size(img_np,1)
+
+            for i in range (height):
+                for j in range (width):
+                    if channels == 1:
+                        img_np[i][j] = aux * ( 2 ** r_bits )
+
+                    elif channels == 3:
+                        r_aux = np.int(img_np[i][j][0]) / 255
+                        g_aux = np.int(img_np[i][j][1]) / 255
+                        b_aux = np.int(img_np[i][j][2]) / 255
+
+                        new_r = np.int(r_aux * ( 2 ** r_bits ))
+                        new_g = np.int(g_aux * ( 2 ** g_bits ))
+                        new_b = np.int(b_aux * ( 2 ** b_bits ))
+
+                        img.putpixel((j, i), (new_r, new_g, new_b))
+
+        img_out = pil_to_np(img)
+        return img_out

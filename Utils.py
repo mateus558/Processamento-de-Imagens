@@ -1,15 +1,19 @@
-import sys
+import sys, os
 import numpy as np
-import matplotlib.pyplot as plt
 from PIL import Image
-import os
-
 
 pathname = os.path.dirname(sys.argv[0])
 
+pathname_image_in = pathname+'images/'
+pathname_image_out = pathname_image_in+'out/'
+
+if not os.path.exists(pathname_image_in):
+    os.makedirs(pathname_image_in)
+if not os.path.exists(pathname_image_out):
+    os.makedirs(pathname_image_out)
 
 def open_image(img_name, channels):
-    img = Image.open(os.path.join(pathname, img_name))
+    img = Image.open(os.path.join(pathname_image_in, img_name))
 
     if channels == 1:
         return img.convert('L')
@@ -21,16 +25,12 @@ def open_image(img_name, channels):
         return img.convert('RGBA')
 
 
-def show_image(img, channels):
-    if channels == 1:
-        plt.imshow(img, cmap='gray')
-    else: plt.imshow(img)
-    plt.show()
+def show_image(img):
+    img.show()
 
 
-# save_image(img, 'lena.jpg')
 def save_image(img, img_name):
-    img.save(os.path.join(pathname, img_name))
+    img.save(os.path.join(pathname_image_out, img_name))
 
 
 def np_to_pil(image):
@@ -41,24 +41,3 @@ def pil_to_np(image):
     img = np.asarray(image, dtype = np.uint8)
     img.setflags(write=1)
     return img
-
-
-# correction_gamma('lena.jpg', 0.5, 'RBG')
-def correction_gamma(img_np, gamma, channels):
-    img_out = img_np
-    gamma_correction = 1 / gamma
-
-    height = np.size(img_np, 0)
-    width = np.size(img_np, 1)
-
-    for i in range(height):
-        for j in range(width):
-            if channels == 1:
-                new = int( 255 * (img_np[i][j] / 255) ** gamma_correction )
-                img_out[i, j] = new
-            elif channels == 3:
-                new_r = int( 255 * (img_np[i][j][0] / 255) ** gamma_correction )
-                new_g = int( 255 * (img_np[i][j][1] / 255) ** gamma_correction )
-                new_b = int( 255 * (img_np[i][j][2] / 255) ** gamma_correction )
-                img_out[i, j] = np.array([new_r, new_g, new_b])
-    return img_out

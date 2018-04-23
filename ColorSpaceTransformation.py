@@ -1,6 +1,26 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+def gamma_correction(img_np, gamma, channels):
+    img_out = img_np
+    gamma_correction = 1 / gamma
+
+    height = np.size(img_np, 0)
+    width = np.size(img_np, 1)
+
+    for i in range(height):
+        for j in range(width):
+            if channels == 1:
+                new = int( 255 * (img_np[i][j] / 255) ** gamma_correction )
+                img_out[i, j] = new
+            elif channels == 3:
+                new_r = int( 255 * (img_np[i][j][0] / 255) ** gamma_correction )
+                new_g = int( 255 * (img_np[i][j][1] / 255) ** gamma_correction )
+                new_b = int( 255 * (img_np[i][j][2] / 255) ** gamma_correction )
+                img_out[i, j] = np.array([new_r, new_g, new_b])
+
+    return img_out
+
 
 def compute_histogram(image, bins, channels=1, plot=False):
     interval_size = 256 / bins
@@ -42,8 +62,8 @@ def equalize_histogram(image, channels=1):
 
     if channels == 1:
         hist = compute_histogram(image, 256, 1)
-        pmf = hist/size #probability mass function
-        cdf = pmf   #cumulative distributive function
+        pmf = hist/size     #probability mass function
+        cdf = pmf           #cumulative distributive function
 
         for i in range(1, len(cdf)):
             cdf[i] = cdf[i-1] + cdf[i]
@@ -68,3 +88,51 @@ def equalize_histogram(image, channels=1):
                     image[j, k, i] = cdf[i, image[j, k, i]]
 
         return image
+
+
+def global_limiarization(image, threshold):
+    bin = np.zeros((image.shape[0], image.shape[1],), dtype=np.uint8)
+
+    for i in range(image.shape[0]):
+        for j in range(image.shape[1]):
+            if np.all(image[i, j] > threshold):
+                bin[i, j] = 255
+    return bin
+
+
+def otsu_thresholding(img):
+    m, n = img.shape
+    size = m*n
+    p = compute_histogram(img, 256, 1)/size
+    psum = np.cumsum(p)
+    mk = np.zeros((256,), dtype=np.float)
+    var = np.zeros((256,), dtype=np.float)
+
+    varg = 0
+    mg = 0
+    p1 = 0
+    p2 = 0
+    m1 = 0
+    m2 = 0
+
+    for i in range(len(psum)):
+        mg += i * p[i]
+        mk[i] = mg
+
+    for i in range(len(psum)):
+        p1 += p[i]
+        p2 = 1 - p1
+
+        if p1 != 0:
+            m1 = mk[i] / p1
+        if p2 != 0:
+            m2 = (mg - mk[i]) / p2
+        var[i] = p1*p2*(m1-m2)*(m1-m2)
+
+        varg += (i - mg) * (i - mg) * p[i]
+
+    kstar = np.argmax(var)
+    n = var[kstar] / varg
+    bin = global_limiarization(img, kstar)
+
+    return bin, kstar, n
