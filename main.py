@@ -58,7 +58,7 @@ def main(argv):
         img_out = mediancut_algorithm(img_pil, int(params[0]), channels)
         save = True
     elif algorithm == "show_histogram":
-        compute_histogram(img_np, int(params[1]),  channels, True)
+        compute_histogram(img_np, int(params[0]),  channels, True)
     elif algorithm == "show_image":
         show_image(img_np, channels)
 

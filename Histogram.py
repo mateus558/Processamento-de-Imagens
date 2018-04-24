@@ -40,31 +40,15 @@ def compute_histogram(image, bins, channels=1, plot=False):
 def equalize_histogram(image, channels=1):
     size = image.shape[0] * image.shape[1]
 
-    if channels == 1:
-        hist = compute_histogram(image, 256, 1)
-        pmf = hist/size #probability mass function
-        cdf = pmf   #cumulative distributive function
+    hist = compute_histogram(image, 256, channels)
+    if channels == 3:
+        hist = sum(hist[:]) / channels
 
-        for i in range(1, len(cdf)):
-            cdf[i] = cdf[i-1] + cdf[i]
-        cdf = cdf * 255
-        image[:, :] = cdf[image[:, :]]
+    pmf = hist / size  # probability mass function
+    cdf = pmf.cumsum()
+    cdf = 255*cdf/cdf[-1]
 
-        return image
-    elif channels == 3:
-        r_hist, g_hist, b_hist = compute_histogram(image, 256, 3, False)
-        hist = np.array([r_hist, g_hist, b_hist])
-        pmf = hist / size
-        cdf = pmf
+    image[:, :] = cdf[image[:, :]]
 
-        for j in range(0, cdf.shape[0]):
-            for i in range(1, len(cdf)):
-                cdf[j][i] = cdf[j][i-1] + cdf[j][i]
-        cdf = cdf * 255
+    return image
 
-        for i in range(0, image.shape[2]):
-            for j in range(0, image.shape[0]):
-                for k in range(0, image.shape[1]):
-                    image[j, k, i] = cdf[i, image[j, k, i]]
-
-        return image

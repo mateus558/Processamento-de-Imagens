@@ -101,7 +101,6 @@ def mediancut_algorithm(img, ncolors, channels):
         pallete.append(sum)
 
     img = pil_to_np(img)
-    print(m, n)
     for i in range(0, m):
         for j in range(0, n):
             old_dist = np.inf
