@@ -1,6 +1,7 @@
 import sys, os
 import numpy as np
 from PIL import Image
+#from skimage.viewer import ImageViewer
 import matplotlib.pyplot as plt
 
 pathname = os.path.dirname(os.path.abspath(__file__))
@@ -32,6 +33,13 @@ def show_image_PIL(img):
 
 
 def show_image_np(img, channels):
+    '''
+    if img.dtype == np.uint16:
+        viewer = ImageViewer(img)
+        viewer.show()
+        skimage.imshow(img)
+        return;
+    '''
     if channels == 1:
         plt.imshow(img, cmap='gray')
     else:
@@ -40,6 +48,7 @@ def show_image_np(img, channels):
 
 
 def save_image(img, img_name):
+    img = np_to_pil(img)
     img.save(os.path.join(pathname_image_out, img_name))
 
 

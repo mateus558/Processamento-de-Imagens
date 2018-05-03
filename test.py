@@ -16,15 +16,17 @@ img_name_in2 = '255.jpg'
 img_name_out = 'lena_quantization_10_10_10.jpg'
 channels = 3
 
-r_bits = 2
+r_bits = 3
 g_bits = 2
 b_bits = 2
 
 img = open_image(img_name_in, channels)
-img = pil_to_np(img)
-img_out = quantization(img, channels, r_bits, g_bits, b_bits)
 
-show_image_np(img_out,3)
+img = pil_to_np(img)
+img_out = otsu_thresholding(img, channels)
+#img_out = quantization(img, channels, r_bits, g_bits, b_bits)
+
+show_image_np(img_out, 3)
 #if img_out.dtype != np.int:
 #    print(img_out[0, :4])
 #    #save_image(img_out, img_name_out)

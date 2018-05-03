@@ -52,7 +52,7 @@ def popularity_algorithm(img, ncolors, ball_size, channels):
     return img
 
 
-def mediancut_algorithm(img, ncolors, channels):
+def mediancut_algorithm(img, ncolors, bits, channels):
     m = img.size[1]
     n = img.size[0]
     size = m * n
@@ -90,15 +90,15 @@ def mediancut_algorithm(img, ncolors, channels):
             buckets.append(bucket[int(len(bucket)/2):])
             del buckets[i]
 
-    rounder = lambda vi: round(vi)
-    rfunc = np.vectorize(rounder)
+    #rounder = lambda vi: round(vi)
+    #rfunc = np.vectorize(rounder)
 
     for bucket in buckets:
         sum = np.zeros((channels,))
 
         for color in bucket:
             sum = sum + np.array(color)
-        sum = rfunc(np.array(sum) / len(bucket))
+        sum = np.array(sum) / len(bucket)
         pallete.append(sum)
 
     img = pil_to_np(img)
@@ -124,9 +124,9 @@ def quantization(img, channels, r_bits=8, g_bits=8, b_bits=8):
 
     if r_bits <= 16 and g_bits <= 16 and b_bits <= 16:
         if r_bits < 8 or g_bits < 8 or b_bits < 8:
-            img_out = mediancut_algorithm(np_to_pil(img), 2 ** (r_bits+ g_bits + b_bits), channels)
+            img_out = mediancut_algorithm(np_to_pil(img), 2 ** (r_bits+ g_bits + b_bits), np.array((r_bits, g_bits, b_bits)), channels)
 
-        elif r_bits is not 8 and g_bits is not 8 and b_bits is not 8:
+        else:
             height = np.size(img,0)
             width = np.size(img,1)
             img_out = np.zeros(shape=img.shape, dtype=np.uint16)
@@ -135,16 +135,16 @@ def quantization(img, channels, r_bits=8, g_bits=8, b_bits=8):
                 for j in range (width):
                     if channels == 1:
                         aux = np.int(img[i][j]) / 255
-                        img[i][j] = aux * ( 2 ** r_bits )
+                        img_out[i][j] = aux * ( 2 ** r_bits )
 
                     elif channels == 3:
-                        r_aux = np.int(img[i][j][0]) / 255
-                        g_aux = np.int(img[i][j][1]) / 255
-                        b_aux = np.int(img[i][j][2]) / 255
+                        r_aux = np.float(img[i][j][0]) / 255
+                        g_aux = np.float(img[i][j][1]) / 255
+                        b_aux = np.float(img[i][j][2]) / 255
 
-                        new_r = np.int(r_aux * ( 2 ** r_bits ))
-                        new_g = np.int(g_aux * ( 2 ** g_bits ))
-                        new_b = np.int(b_aux * ( 2 ** b_bits ))
+                        new_r = np.uint16(r_aux * ( 2 ** r_bits ))
+                        new_g = np.uint16(g_aux * ( 2 ** g_bits ))
+                        new_b = np.uint16(b_aux * ( 2 ** b_bits ))
 
                         img_out[i, j] = np.array((new_r, new_g, new_b))
         return img_out

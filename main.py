@@ -42,7 +42,7 @@ def main(argv):
 
     img_pil = open_image(inimage, channels)
     img_np = pil_to_np(img_pil)
-    img_out = img_np
+    img_out = None
     save = False
 
     if algorithm == "gamma_correction":
@@ -52,7 +52,19 @@ def main(argv):
         img_out = global_limiarization(img_out, np.array(params))
         save = True
     elif algorithm == "otsu_thresholding":
-        img_out, _, _ = otsu_thresholding(img_out)
+        if channels == 1:
+            k, _ = otsu_thresholding(img_np)
+            img_out = global_limiarization(img_np, k)
+        else:
+            kr, _ = otsu_thresholding(img_np[:][:][0])
+            kg, _ = otsu_thresholding(img_np[:][:][1])
+            kb, _ = otsu_thresholding(img_np[:][:][2])
+            img_out = np.zeros(img_np.shape, dtype = np.uint8)
+            img_out[:,:,0] = global_limiarization(img_np[:,:,0], kr)
+            img_out[:,:,1] = global_limiarization(img_np[:,:,1], kg)
+            img_out[:,:,2] = global_limiarization(img_np[:,:,2], kb)
+
+            channels = 1
         save = True
     elif algorithm == "equalize_histogram":
         img_out = equalize_histogram(img_out)
@@ -74,11 +86,9 @@ def main(argv):
         show_image_np(img_np, channels)
 
     if errors:
-        img_np = pil_to_np(img_pil)
         signal_to_noise_ration(img_np, img_out, channels)
 
     if save:
-        img_out = np_to_pil(img_out)
         save_image(img_out, outimage)
         if show:
             show_image_np(img_out, channels)

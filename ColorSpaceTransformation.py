@@ -86,7 +86,10 @@ def global_limiarization(image, threshold):
 def otsu_thresholding(img):
     m, n = img.shape
     size = m*n
-    p = compute_histogram(img, 256, 1)/size
+    p = compute_histogram(img, 256, 1)
+    pf = np.zeros(p.shape, dtype=np.float)
+    for i in range(pf.size):
+        pf[i] = p[i]/size
     psum = np.cumsum(p)
     mk = np.zeros((256,), dtype=np.float)
     var = np.zeros((256,), dtype=np.float)
@@ -99,11 +102,11 @@ def otsu_thresholding(img):
     m2 = 0
 
     for i in range(len(psum)):
-        mg += i * p[i]
+        mg += i * pf[i]
         mk[i] = mg
 
     for i in range(len(psum)):
-        p1 += p[i]
+        p1 += pf[i]
         p2 = 1 - p1
 
         if p1 != 0:
@@ -112,10 +115,9 @@ def otsu_thresholding(img):
             m2 = (mg - mk[i]) / p2
         var[i] = p1*p2*(m1-m2)*(m1-m2)
 
-        varg += (i - mg) * (i - mg) * p[i]
+        varg += (i - mg) * (i - mg) * pf[i]
 
     kstar = np.argmax(var)
     n = var[kstar] / varg
-    bin = global_limiarization(img, kstar)
 
-    return bin, kstar, n
+    return kstar, n
