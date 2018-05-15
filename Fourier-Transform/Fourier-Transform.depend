@@ -1,0 +1,7 @@
+# depslib dependency file v1.0
+1525977413 source:c:\users\kevyn\desktop\trabalho-1-de-processamento-de-imagens\fourier-transform\main.cpp
+	<stdio.h>
+	<stdlib.h>
+	<iostream>
+	<complex>
+

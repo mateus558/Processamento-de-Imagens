@@ -60,3 +60,6 @@ def pil_to_np(image):
     img = np.asarray(image, dtype = np.uint8)
     img.setflags(write=1)
     return img
+
+def get_path_name():
+    return pathname
