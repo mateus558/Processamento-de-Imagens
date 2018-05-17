@@ -1,7 +1,6 @@
 import subprocess
 import Utils
 from scipy import signal
-from scipy.ndimage.filters import gaussian_filter
 
 #
 #	boundary:
@@ -21,12 +20,18 @@ def convolve(img1_np, img2_np, boundary='fill', fill_value=0):
 
 #def low_pass_filter_generator(dimension, degree):
 
-#Tem que passar um canal por vez
-def gaussian_filters(img_np, sigma=7):
-	return gaussian_filter(img_np, sigma)
+
+def fourier_transform_scipy(img_np, algorithm=1):
+	img_as_array = np.asarray(img_np).reshape(-1)
+	img_as_array_out = np.fft2(img_as_array)
 
 
-def fourier_transform(img_np):
+#
+#	algorithm:
+#		- 0: fourier_transform_inverse
+#		- 1: fourier_transform
+#
+def fourier_transform(img_np, algorithm=1):
 	img_as_array = np.asarray(img_np).reshape(-1)
 
 	program = get_path_name() + '/Fourier-Transform.exe'
@@ -34,10 +39,52 @@ def fourier_transform(img_np):
 	file_name = 'img_array.txt'
 	np.savetxt(file_name, img_np, fmt='%d')
 
-	arguments = (str(img_np.shape[0]) + ' ' + str(img_np.shape[1]) + ' ' + str(img_np.shape[2]) + ' ' + file_name)
+	arguments = (str(algorithm), str(img_np.shape[0]) + ' ' + str(img_np.shape[1]) + ' ' + str(img_np.shape[2]) + ' ' + file_name)
 	print (arguments)
 	subprocess.call([program, arguments])
 
+	file_name_real = 'img_array_real.txt'
+	file_name_imag = 'img_array_imag.txt'
+
+	file = open(file_name_real, 'r').read()
+	file = open(file_name_imag, 'r').read()
+
+	img_real_np = [img_np.shape[0]][img_np.shape[1]][img_np.shape[2]]
+	img_imag_np = [img_np.shape[0]][img_np.shape[1]][img_np.shape[2]]
+
+	u = 0; v = 0; k = 0
+
+	for value in file.split("\n"):
+		img_real_np[u][v][k] = value
+
+		k += 1
+
+		if k == img_np.shape[2]:
+			k = 0; v += 1
+			if v == img_np.shape[1]:
+				v = 0; u += 1
+
+	u = 0; v = 0; k = 0
+
+	for value in file.split("\n"):
+		img_imag_np[u][v][k] = value
+
+		k += 1
+
+		if k == img_np.shape[2]:
+			k = 0; v += 1
+			if v == img_np.shape[1]:
+				v = 0; u += 1
+
+
+	magnitude = [img_np.shape[0]][img_np.shape[1]][img_np.shape[2]]
+	phase_angle = [img_np.shape[0]][img_np.shape[1]][img_np.shape[2]]
+
+	for i in range (img_np.shape[0]):
+		for j in range (img_np.shape[1]):
+			for k in range (img_np.shape[2]):
+				magnitude[i][j][k] = np.sqrt(img_real_np[i][j][k]**2 + img_imag_np[i][j][k]**2)
+				phase_angle[i][j][k] = np.arctan(img_imag_np[i][j][k] / img_real_np[i][j][k])
 
 
 '''

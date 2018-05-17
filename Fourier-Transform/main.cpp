@@ -58,6 +58,19 @@ void fourier_transform_inverse(){
     }
 }
 
+
+/**
+* Paramns:
+*   - (int) Algorithm selected:
+*           - 0: fourier_transform_inverse()
+*           - 1: fourier_transform()
+*   - (int) Height
+*   - (int) Width
+*   - (int) Channels
+*   - (char*) File Name
+*
+**/
+
 int main(int argc, char *argv[]){
     if(argc != 5){
         cerr << "Too few arguments to run" << endl;
@@ -67,12 +80,13 @@ int main(int argc, char *argv[]){
     char* file_name, file_aux;
     FILE* file;
 
-    height    = atoi(argv[1]);
-    width     = atoi(argv[2]);
-    channels  = atoi(argv[3]);
-    file_name = argv[4];
+    algorithm = atoi(argv[1]);
+    height    = atoi(argv[2]);
+    width     = atoi(argv[3]);
+    channels  = atoi(argv[4]);
+    file_name = argv[5];
 
-    //cout << height << " " << width << " " << channels << " " << file_name << endl;
+    //cout << algorithm << " "  << height << " " << width << " " << channels << " " << file_name << endl;
 
     file = fopen(file_name, "r");
 
@@ -101,7 +115,38 @@ int main(int argc, char *argv[]){
 
     fclose(file);
 
+    if(algorithm)
+        fourier_transform()
+    else
+        fourier_transform_inverse()
 
+
+    file_name = "img_array_real.txt"
+    file = fopen(file_name, "w");
+
+    for(int u=0; i<height; i++){
+        for(int v=0; j<width; j++){
+            for(int k=0; k<channels; k++){
+                fprintf(file, "%f\t", f[u][v][k].real());
+            }
+            fprintf(file, "\n");
+        }
+    }
+
+    fclose(file);
+
+    file_name = "img_array_imag.txt"
+    file = fopen(file_name, "w");
+
+    for(int u=0; i<height; i++){
+        for(int v=0; j<width; j++){
+            for(int k=0; k<channels; k++){
+                fprintf(file, "%f\n", f[u][v][k].imag());
+            }
+        }
+    }
+
+    fclose(file);
 
     return 0;
 }
