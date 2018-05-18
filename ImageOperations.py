@@ -1,6 +1,6 @@
 import subprocess
 import Utils
-from scipy import signal
+import scipy.special, scipy.signal
 
 #
 #	boundary:
@@ -18,13 +18,57 @@ def convolve(img1_np, img2_np, boundary='fill', fill_value=0):
 
 	return img_out
 
-#def low_pass_filter_generator(dimension, degree):
+def low_pass_filter_generator(dimension, degree):
+	box_filter = [dimension]
+	for i in range(dimension):
+		box_filter[i] = 1
+
+	degree *= 2		#Because is a separete filter
+	return box_filter
+
+def gaussian_filter_generator(dimension):
+	gaussian_filter = [dimension]
+	for i in range(dimension):
+		gaussian_filter[i] = special.comb(dimension, i) #or special.binom(dimension, i)
+
+	return gaussian_filter
+
+#
+#	selected:
+#		- 0: Prewitt
+#		- 1: Sobel
+#		- 2: Roberts 
+#		- 3: Laplaciano 
+#
+def high_pass_filter(selected=0):
+	if selected == 0:
+		filter = [[-1, -1, -1],
+				  [ 0,  0,  0],
+				  [ 1,  1,  1]]
+		return filter
+
+	elif selected == 1:
+		filter = [[-1, -2, -1],
+				  [ 0,  0,  0],
+				  [ 1,  2,  1]]
+		return filter
+
+	elif selected == 2:
+		filter = [[ 1,  0],
+				  [ 0, -1]]
+		return filter
+
+	elif selected == 3:
+		# I think we have to calculate it (See: 'aula4-filtragem.pdf' page 50)
+		#return filter
+		return
 
 
-def fourier_transform_scipy(img_np, algorithm=1):
+def fourier_transform_scipy(img_np):
 	img_as_array = np.asarray(img_np).reshape(-1)
 	img_as_array_out = np.fft2(img_as_array)
 
+	return img_as_array_out
 
 #
 #	algorithm:
