@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="400 400 3 img_array.txt" />
+				<Option parameters="400 400 img_array.txt" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>

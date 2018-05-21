@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <complex>
+#include <omp.h>
 
 #define PI 3.14159265359
 
@@ -9,22 +10,25 @@ using namespace std;
 
 complex<double> ***f;
 double ***img;
-int height, width, channels;
+int height, width, channels, algorithm;
 
 
 void fourier_transform(){
-    complex<double> sumR = 0.0, sumG = 0.0, sumB = 0.0;
     complex<double> i = sqrt(-1);
+    i.real() = 0.0 ;
     complex<double> exponential;
 
     int M = height, N = width;
 
+    # pragma omp parallel for
     for(int u=0; u<height; u++){
         for(int v=0; v<width; v++){
-            sumR = 0.0; sumG = 0.0; sumB = 0.0;
+            complex<double> sumR = 0.0, sumG = 0.0, sumB = 0.0;
+            //sumR = 0.0; sumG = 0.0; sumB = 0.0;
             for(int x=0; x<height; x++){
                 for(int y=0; y<width; y++){
-                    exponential = exp(-i*((complex<double>)(2*PI*((u*x/M) + (v*y/N)))));
+                    complex<double> aux = 2*PI*((u*x/M) + (v*y/N));
+                    exponential = exp(-i*aux);
                     sumR += img[x][y][0] * exponential;
                     sumG += img[x][y][1] * exponential;
                     sumB += img[x][y][2] * exponential;
@@ -42,6 +46,7 @@ void fourier_transform_inverse(){
 
     int M = height, N = width;
 
+    # pragma omp for
     for(int x=0; x<height; x++){
         for(int y=0; y<width; y++){
             sumR = 0.0; sumG = 0.0; sumB = 0.0;
@@ -53,7 +58,7 @@ void fourier_transform_inverse(){
                     sumB += f[u][v][2] * exponential;
                 }
             }
-            img[x][y][0] = sumR.real(); img[x][y][1] = sumG.real(); img[x][y][2] = sumB.real();
+            img[x][y][0] = sumR.real()/(M*N); img[x][y][1] = sumG.real()/(M*N); img[x][y][2] = sumB.real()/(M*N);
         }
     }
 }
@@ -72,7 +77,8 @@ void fourier_transform_inverse(){
 **/
 
 int main(int argc, char *argv[]){
-    if(argc != 5){
+    cout << argc << endl;
+    if(argc != 6){
         cerr << "Too few arguments to run" << endl;
         exit(1);
     }
@@ -92,10 +98,19 @@ int main(int argc, char *argv[]){
 
     img = (double***) malloc(height * sizeof(double**));
 
-    for(int i=0; i<width; i++){
+    for(int i=0; i<height; ++i){
         img[i] = (double**)malloc(width * sizeof(double*));
-        for(int j=0; j<channels; j++){
+        for(int j=0; j<width; ++j){
             img[i][j] = (double*)malloc(channels * sizeof(double));
+        }
+    }
+
+    f = (complex<double>***) malloc(height * sizeof(complex<double>**));
+
+    for(int i=0; i<height; ++i){
+        f[i] = (complex<double>**)malloc(width * sizeof(complex<double>*));
+        for(int j=0; j<width; ++j){
+            f[i][j] = (complex<double>*)malloc(channels * sizeof(complex<double>));
         }
     }
 
@@ -116,30 +131,29 @@ int main(int argc, char *argv[]){
     fclose(file);
 
     if(algorithm)
-        fourier_transform()
+        fourier_transform();
     else
-        fourier_transform_inverse()
+        fourier_transform_inverse();
 
 
-    file_name = "img_array_real.txt"
+    file_name = "img_array_real.txt";
     file = fopen(file_name, "w");
 
-    for(int u=0; i<height; i++){
-        for(int v=0; j<width; j++){
+    for(int u=0; u<height; u++){
+        for(int v=0; v<width; v++){
             for(int k=0; k<channels; k++){
-                fprintf(file, "%f\t", f[u][v][k].real());
+                fprintf(file, "%f\n", f[u][v][k].real());
             }
-            fprintf(file, "\n");
         }
     }
 
     fclose(file);
 
-    file_name = "img_array_imag.txt"
+    file_name = "img_array_imag.txt";
     file = fopen(file_name, "w");
 
-    for(int u=0; i<height; i++){
-        for(int v=0; j<width; j++){
+    for(int u=0; u<height; u++){
+        for(int v=0; v<width; v++){
             for(int k=0; k<channels; k++){
                 fprintf(file, "%f\n", f[u][v][k].imag());
             }

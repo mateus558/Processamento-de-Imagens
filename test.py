@@ -5,7 +5,7 @@ from Quantization import *
 from ErrorMetrics import *
 from ColorSpaceTransformation import *
 from ImageOperations import *
-
+'''
 #img_pil = open_image('lena.jpg', channels)
 #img = mediancut_algorithm(img_pil, 16, channels)
 #img = pil_to_np(img_pil)
@@ -35,4 +35,15 @@ A = np.asarray(img).reshape(-1)
 #    print(img_out[0, :4])
 #    #save_image(img_out, img_name_out)
 #    show_image_np(img_out, 3)
+
+'''
+
+img_name_in = 'cat.jpg'
+channels = 3
+
+img = open_image(img_name_in, channels)
+
+img = pil_to_np(img)
+
+fourier_transform(img, 1)
 
