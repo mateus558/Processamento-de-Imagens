@@ -14,17 +14,16 @@ int height, width, channels, algorithm;
 
 
 void fourier_transform(){
-    complex<double> i = sqrt(-1);
-    i.real() = 0.0 ;
+    complex<double> i; i.real() = 0.0 ; i.imag() = 1.0;
     complex<double> exponential;
 
     int M = height, N = width;
 
-    # pragma omp parallel for
+    # pragma omp for
     for(int u=0; u<height; u++){
         for(int v=0; v<width; v++){
-            complex<double> sumR = 0.0, sumG = 0.0, sumB = 0.0;
-            //sumR = 0.0; sumG = 0.0; sumB = 0.0;
+        complex<double> sumR = 0.0, sumG = 0.0, sumB = 0.0;
+            sumR = 0.0; sumG = 0.0; sumB = 0.0;
             for(int x=0; x<height; x++){
                 for(int y=0; y<width; y++){
                     complex<double> aux = 2*PI*((u*x/M) + (v*y/N));
@@ -142,7 +141,7 @@ int main(int argc, char *argv[]){
     for(int u=0; u<height; u++){
         for(int v=0; v<width; v++){
             for(int k=0; k<channels; k++){
-                fprintf(file, "%f\n", f[u][v][k].real());
+                fprintf(file, "%d\n", (int)f[u][v][k].real());
             }
         }
     }
@@ -155,7 +154,7 @@ int main(int argc, char *argv[]){
     for(int u=0; u<height; u++){
         for(int v=0; v<width; v++){
             for(int k=0; k<channels; k++){
-                fprintf(file, "%f\n", f[u][v][k].imag());
+                fprintf(file, "%d\n", (int)f[u][v][k].imag());
             }
         }
     }
