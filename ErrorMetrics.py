@@ -16,6 +16,7 @@ def squared_error(img1_np, img2_np, channels):
                     img2_aux = np.int(img2_np[i][j][k])
                     error += ((img1_aux - img2_aux) ** 2)
 
+    #print("Squared Error: " + str(error))
     return error
 
 
@@ -42,7 +43,6 @@ def signal_to_noise_ration(img, noisy_img, channels):
     width2 = np.size(noisy_img, 1)
 
     if width == width2 and height == height2:
-        """
         #Version 1
         signal = 0.0
         for i in range(height):
@@ -52,9 +52,4 @@ def signal_to_noise_ration(img, noisy_img, channels):
                 elif channels == 3:
                     for k in range (0,channels):
                         signal += (noisy_img[i][j][k]) ** 2
-
-        print("SNR1: " + str(signal / squared_error(img, noisy_img, channels) ))
-        """
-
-        #Version 2
-        print ("SNR: " + str(20 * np.log10 (255 / mean_square_error(img, noisy_img, channels))))
+        print ("SNR: " + str(10 * np.log10 (signal / squared_error(img, noisy_img, channels))))

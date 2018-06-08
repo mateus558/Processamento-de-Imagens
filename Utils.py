@@ -47,7 +47,7 @@ def show_image_np(img, channels):
     plt.show()
 
 
-def save_image(img, img_name):
+def save_image(img, img_name='out.jpg'):
     img = np_to_pil(img)
     img.save(os.path.join(pathname_image_out, img_name))
 
