@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 #from skimage.viewer import ImageViewer
 import matplotlib.pyplot as plt
+import scipy.misc
 
 pathname = os.path.dirname(os.path.abspath(__file__))
 
@@ -46,8 +47,7 @@ def show_image_np(img, channels):
         plt.imshow(img)
     plt.show()
 
-
-def save_image(img, img_name='out.jpg'):
+def save_image(img, img_name='out.png'):
     img = np_to_pil(img)
     img.save(os.path.join(pathname_image_out, img_name))
 

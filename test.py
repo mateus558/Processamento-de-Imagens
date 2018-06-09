@@ -9,15 +9,15 @@ from ImageOperations import *
 
 #Test Fourier
 
-img_name_in = 'cat.jpg'
+img_name_in = 'teste7.jpg'
 channels = 3
 
 img = open_image(img_name_in, channels)
 
 img = pil_to_np(img)
 
-#fourier_transform_scipy(img)
+fourier_transform_scipy(img)
 
-fourier_transform(img, 2, 20)
+fourier_transform(img, 2, 20, 30)
 
 

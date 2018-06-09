@@ -73,26 +73,36 @@ def high_pass_filter(selected=0):
 
 #
 #	filter:
-#		- 1: ideal_high_pass_filter
-#		- 2: ideal_low_pass_filter
+#		- 1: ideal_band_pass_filter
+#		- 2: ideal_high_pass_filter
+#		- 3: ideal_low_pass_filter
 #
-def ideal_pass_filter(img_real, img_imag, width, height, radius, filter):
+def ideal_pass_filter(img_real, img_imag, width, height,filter, radius1=10, radius2=5):
+	if (filter == 1):
+		if(radius1 > radius2):
+			aux = radius1
+			radius1 = radius2
+			radius2 = aux
+
 	center_x = int(height / 2)
 	center_y = int(width / 2)
 	for i in range(0, height):
 		for j in range (0, width):
 			distance = np.sqrt((i - center_x)**2 + (j - center_y)**2)
 
-			if (filter == 1 and distance > radius) or (filter == 2 and distance <= radius):
-				if i < height and i >= 0 and j < width and j >= 0:
-					x = (i*width*3)+(j*3)
-					img_real[x]   = 0
-					img_real[x+1] = 0
-					img_real[x+2] = 0
+			if (   (filter == 1 and (distance < radius1 or distance > radius2))
+				or (filter == 2 and distance > radius1)
+				or (filter == 3 and distance <= radius1)):
 
-					img_imag[x]   = 0
-					img_imag[x+1] = 0
-					img_imag[x+2] = 0
+				x = (i*width*3)+(j*3)
+				img_real[x]   = 0.0
+				img_real[x+1] = 0.0
+				img_real[x+2] = 0.0
+
+				img_imag[x]   = 0.0
+				img_imag[x+1] = 0.0
+				img_imag[x+2] = 0.0
+
 
 	return img_real, img_imag
 
@@ -110,9 +120,9 @@ def fourier_transform_scipy(img_np):
 	for u in range (img_np.shape[0]):
 		for v in range (img_np.shape[1]):
 			i = (u*width*3)+(v*3)
-			img_np_inverse_out[u][v][0] = float(img_inverse_out[i])
-			img_np_inverse_out[u][v][1] = float(img_inverse_out[i+1])
-			img_np_inverse_out[u][v][2] = float(img_inverse_out[i+2])
+			img_np_inverse_out[u][v][0] = img_inverse_out[i].real
+			img_np_inverse_out[u][v][1] = img_inverse_out[i+1].real
+			img_np_inverse_out[u][v][2] = img_inverse_out[i+2].real
 
 
 	print('\nFT Scipy')
@@ -123,12 +133,13 @@ def fourier_transform_scipy(img_np):
 
 
 #
-#	algorithm:
+#	filter:
 #		- 0: do nothing
-#		- 1: ideal high pass filter
-#		- 2: ideal low pass filter
+#		- 1: ideal_band_pass_filter
+#		- 2: ideal_high_pass_filter
+#		- 3: ideal_low_pass_filter
 #
-def fourier_transform(img_np, filter=0, radius=5):
+def fourier_transform(img_np, filter=0, radius1=10, radius2=5):
 	img_aux = np.asarray(img_np).reshape(-1)
 
 	img_as_list = list(img_aux)
@@ -176,11 +187,13 @@ def fourier_transform(img_np, filter=0, radius=5):
 				phase_angle[u][v][1] = np.uint8(np.arctan(img_imag_ft[i+1] / img_real_ft[i+1]))
 				phase_angle[u][v][2] = np.uint8(np.arctan(img_imag_ft[i+2] / img_real_ft[i+2]))
 
-	save_image(magnitude, 'magnitude.jpg')
-	save_image(phase_angle, 'phase_angle.jpg')
+	img = np_to_pil(magnitude)
+	#show_image_PIL(img)
+	save_image(magnitude, 'magnitude.png')
+	save_image(phase_angle, 'phase_angle.png')
 
-	if filter != 0:
-		img_real_ft, img_imag_ft = ideal_pass_filter(img_real_ft, img_imag_ft, img_np.shape[0], img_np.shape[1], radius, filter)
+	if filter != 0 and filter < 4:
+		img_real_ft, img_imag_ft = ideal_pass_filter(img_real_ft, img_imag_ft, img_np.shape[0], img_np.shape[1], filter, radius1, radius2)
 
 	for u in range (img_np.shape[0]):
 		for v in range (img_np.shape[1]):
@@ -208,8 +221,15 @@ def fourier_transform(img_np, filter=0, radius=5):
 				phase_angle[u][v][1] = np.uint8(np.arctan(img_imag_ft[i+1] / img_real_ft[i+1]))
 				phase_angle[u][v][2] = np.uint8(np.arctan(img_imag_ft[i+2] / img_real_ft[i+2]))
 
-	save_image(magnitude, 'magnitude2.jpg')
-	save_image(phase_angle, 'phase_angle2.jpg')
+
+	for u in range (img_np.shape[0]):
+		for v in range (img_np.shape[1]):
+			for k in range (img_np.shape[2]):
+				phase_angle[u][v][k] = 255 * (phase_angle[u][v][k] - phase_angle.min()) / (phase_angle.max() - phase_angle.min())
+				magnitude[u][v][k]   = 255 * (magnitude[u][v][k]   -   magnitude.min()) / (  magnitude.max() -   magnitude.min())
+
+	save_image(phase_angle, 'phase_angle2.png')
+	save_image(magnitude, 'magnitude2.png')
 	
 	#Inverse
 
@@ -228,7 +248,7 @@ def fourier_transform(img_np, filter=0, radius=5):
 			img_np_inverse_out[u][v][2] = img_inverse_out[i+2]
 
 
-	save_image(img_np_inverse_out, 'inverse_out.jpg')
+	save_image(img_np_inverse_out, 'inverse_out.png')
 
 	mean_square_error(img_np, img_np_inverse_out, img_np.shape[2])
 
