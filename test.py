@@ -7,19 +7,21 @@ from ColorSpaceTransformation import *
 from ImageOperations import *
 
 
-#Test Fourier
+
 
 img_name_in = 'cat.jpg'
 channels = 3
-
 img = open_image(img_name_in, channels)
-
 img = pil_to_np(img)
+
+
+#Test Fourier
+
+fourier_transform_scipy(img, 3, 5, 30)
+fourier_transform(img, 3, 5, 30)
+'''
+#Test Resize
+
 img_s = resize(img, .5, 3, type="pontual", kind="slinear")
-
-show_image_np(img_s, 3)
-#fourier_transform_scipy(img)
-
-#fourier_transform(img, 2, 20, 30)
-
+'''
 

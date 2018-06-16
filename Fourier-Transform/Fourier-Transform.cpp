@@ -10,6 +10,8 @@
 using namespace std;
 
 complex<double> ***f;
+complex<double> ***f_filtered;
+int filter = 0;
 int height_aux, width_aux, channels = 3;
 
 void init(){
@@ -23,7 +25,7 @@ void init(){
     }
 }
 
-void fourier_transform(int* img, int height, int width, double* img_real, double* img_imag){
+void fourier_transform(int* img, int height, int width, double* img_real, double* img_imag, int filter, int radius_1, int radius_2){
     height_aux = height;
     width_aux = width;
 
@@ -52,9 +54,9 @@ void fourier_transform(int* img, int height, int width, double* img_real, double
                 }
             }
 
-            f[u][v][0] = sumR*division;
-            f[u][v][1] = sumG*division;
-            f[u][v][2] = sumB*division;
+            f[u][v][0] = sumR;
+            f[u][v][1] = sumG;
+            f[u][v][2] = sumB;
 
             indice = (u*width*3)+(v*3);
 
@@ -67,6 +69,10 @@ void fourier_transform(int* img, int height, int width, double* img_real, double
             img_imag[indice+2] = f[u][v][2].imag();
         }
     }
+
+    if(filter != 0){
+        ideal_pass_filter(img_real, img_imag, filter, radius_1, radius_2);
+    }
 }
 
 void inverse_fourier_transform(double* img_real, double* img_imag, int* img){
@@ -77,7 +83,7 @@ void inverse_fourier_transform(double* img_real, double* img_imag, int* img){
 
     int indice, indice2;
     float M = (height_aux * 1.0), N = (width_aux * 1.0);
-    float division = 1 / (sqrt(M*N));
+    float division = 1 / ((M*N));
 
     for(int x=0; x<height_aux; x++){
         for(int y=0; y<width_aux; y++){
@@ -106,56 +112,38 @@ void inverse_fourier_transform(double* img_real, double* img_imag, int* img){
         }
     }
 }
-/*
-void ideal_low_pass_filter(int radius, double* img_real, double* img_imag){
-	int center_x = int(height_aux / 2);
-	int center_y = int(width_aux  / 2);
-	for(int i=center_x-radius; i<center_x+radius; i++){
-        for(int j=center_y-radius; i<center_y+radius; j++){
-            double distance = sqrt((i - center_x)*(i - center_x) + (j - center_y)*(j - center_y));
-            int x = (i*width_aux*3)+(j*3);
-            if(distance <= radius){
-                if(i < height_aux && i >= 0 && j < width_aux && j >= 0){
-                    img_real[x]   = 0;
-                    img_real[x+1] = 0;
-                    img_real[x+2] = 0;
 
-                    img_imag[x]   = 0;
-                    img_imag[x+1] = 0;
-                    img_imag[x+2] = 0;
-
-                    f[i][j][0] = {0.0, 0.0};
-                    f[i][j][1] = {0.0, 0.0};
-                    f[i][j][2] = {0.0, 0.0};
-                }
-            }
-        }
+void ideal_pass_filter(double* img_real, double* img_imag, int filter, int radius_1, int radius_2){
+	if(filter == 1){
+		if(radius_1 > radius_2){
+			int aux = radius_1;
+			radius_1 = radius_2;
+			radius_2 = aux;
+		}
 	}
-}
 
-void ideal_high_pass_filter(int radius, double* img_real, double* img_imag){
 	int center_x = height_aux / 2;
-	int center_y = width_aux  / 2;
+	int center_y = width_aux / 2;
+	double distance;
+	int x;
 	for(int i=0; i<height_aux; i++){
-        for(int j=0; i<width_aux; j++){
-            double distance = sqrt((i - center_x)*(i - center_x) + (j - center_y)*(j - center_y));
-            int x = (i*width_aux*3)+(j*3);
-            if(distance > radius){
-                if(i < height_aux && i >= 0 && j < width_aux && j >= 0){
-                    img_real[x]   = 0;
-                    img_real[x+1] = 0;
-                    img_real[x+2] = 0;
+        for(int j=0; j<width_aux; j++){
+            distance = sqrt((i - center_x)*(i - center_x) + (j - center_y)*(j - center_y));
+            if (   (filter == 1 && (distance <= radius_1 || distance >= radius_2))
+                || (filter == 2 && distance >= radius_1)
+                || (filter == 3 && distance <= radius_1)){
 
-                    img_imag[x]   = 0;
-                    img_imag[x+1] = 0;
-                    img_imag[x+2] = 0;
+                x = (i*width_aux*3)+(j*3);
 
-                    f[i][j][0] = {0.0, 0.0};
-                    f[i][j][1] = {0.0, 0.0};
-                    f[i][j][2] = {0.0, 0.0};
-                }
+				img_real[x]   = 0.0;
+				img_real[x+1] = 0.0;
+				img_real[x+2] = 0.0;
+
+				img_imag[x]   = 0.0;
+				img_imag[x+1] = 0.0;
+				img_imag[x+2] = 0.0;
+
             }
         }
 	}
 }
-*/
