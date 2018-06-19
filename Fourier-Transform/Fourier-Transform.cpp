@@ -1,6 +1,5 @@
 #include "Fourier-Transform.h"
 #include <iostream>
-#include <stdio.h>
 #include <stdlib.h>
 #include <complex>
 #include <complex.h>

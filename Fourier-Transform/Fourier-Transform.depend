@@ -28,21 +28,19 @@
 1528826504 c:\users\kevyn\desktop\trabalho-1-de-processamento-de-imagens\fourier-transform\main.h
 	<stdlib.h>
 
-1528423115 source:d:\documentos\github\trabalho-1-de-processamento-de-imagens\fourier-transform\fourier-transform.cpp
+1529412084 source:d:\documentos\github\trabalho-1-de-processamento-de-imagens\fourier-transform\fourier-transform.cpp
 	"Fourier-Transform.h"
 	<iostream>
-	<stdio.h>
 	<stdlib.h>
 	<complex>
 	<complex.h>
 
-1528422741 d:\documentos\github\trabalho-1-de-processamento-de-imagens\fourier-transform\fourier-transform.h
+1528826354 d:\documentos\github\trabalho-1-de-processamento-de-imagens\fourier-transform\fourier-transform.h
 
-1528420687 source:d:\documentos\github\trabalho-1-de-processamento-de-imagens\fourier-transform\main.c
+1528826497 source:d:\documentos\github\trabalho-1-de-processamento-de-imagens\fourier-transform\main.c
 	"Fourier-Transform.h"
 	"main.h"
 
-1528396415 d:\documentos\github\trabalho-1-de-processamento-de-imagens\fourier-transform\main.h
-	<stdio.h>
+1528826504 d:\documentos\github\trabalho-1-de-processamento-de-imagens\fourier-transform\main.h
 	<stdlib.h>
 
