@@ -1,24 +1,28 @@
 EXPORTS
     Fourier_transform @1
     Inverse_fourier_transform @2
-    _Z17fourier_transformPiiiPdS0_ @3
-    _Z25inverse_fourier_transformPdS_Pi @4
-    _Z4initv @5
-    _ZNKSt7complexIdE4imagB5cxx11Ev @6
-    _ZNKSt7complexIdE4realB5cxx11Ev @7
-    _ZNKSt7complexIdE5__repEv @8
-    _ZNSt7complexIdEC1ECd @9
-    _ZNSt7complexIdEC1Edd @10
-    _ZNSt7complexIdEaSEd @11
-    _ZNSt7complexIdEmLIdEERS0_RKS_IT_E @12
-    _ZNSt7complexIdEpLIdEERS0_RKS_IT_E @13
-    _ZSt13__complex_expCd @14
-    _ZSt3expIdESt7complexIT_ERKS2_ @15
-    _ZSt4sqrtf @16
-    _ZStmlIdESt7complexIT_ERKS2_S4_ @17
-    _ZStngIdESt7complexIT_ERKS2_ @18
-    _get_output_format @19
-    channels @20 DATA
-    f @21 DATA
-    height_aux @22 DATA
-    width_aux @23 DATA
+    _Z17fourier_transformPiiiPdS0_iii @3
+    _Z17ideal_pass_filterPdS_iii @4
+    _Z25inverse_fourier_transformPdS_Pi @5
+    _Z4initv @6
+    _ZNKSt7complexIdE4imagB5cxx11Ev @7
+    _ZNKSt7complexIdE4realB5cxx11Ev @8
+    _ZNKSt7complexIdE5__repEv @9
+    _ZNSt7complexIdEC1ECd @10
+    _ZNSt7complexIdEC1Edd @11
+    _ZNSt7complexIdEaSEd @12
+    _ZNSt7complexIdEmLIdEERS0_RKS_IT_E @13
+    _ZNSt7complexIdEpLIdEERS0_RKS_IT_E @14
+    _ZSt13__complex_expCd @15
+    _ZSt3expIdESt7complexIT_ERKS2_ @16
+    _ZSt4sqrtIiEN9__gnu_cxx11__enable_ifIXsrSt12__is_integerIT_E7__valueEdE6__typeES3_ @17
+    _ZSt4sqrtf @18
+    _ZStmlIdESt7complexIT_ERKS2_S4_ @19
+    _ZStngIdESt7complexIT_ERKS2_ @20
+    _get_output_format @21
+    channels @22 DATA
+    f @23 DATA
+    f_filtered @24 DATA
+    filter @25 DATA
+    height_aux @26 DATA
+    width_aux @27 DATA
