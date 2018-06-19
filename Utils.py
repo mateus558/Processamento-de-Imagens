@@ -49,6 +49,8 @@ def show_image_np(img, channels):
 
 def save_image(img, img_name='out.png'):
     img = np_to_pil(img)
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
     img.save(os.path.join(pathname_image_out, img_name))
 
 

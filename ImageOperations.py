@@ -20,20 +20,24 @@ dll = CDLL('Fourier-Transform/bin/Debug/libFourier-Transform.dll')
 #    
 #    fill_value: valor da constante
 #
-def convolve(img1_np, img2_np, boundary='fill', fill_value='auto'):
-    if len(img1_np.shape) > 2:
-        img_out = signal.convolve(img1_np, img2_np, boundary, fill_value)
+def convolve(img1_np, kernel, mode = "full", boundary='fill', fill_value=0, channels = 1):
+    
+    if channels == 3:
+        img_outr = signal.convolve2d(img1_np[:, :, 0], kernel, mode, boundary, fill_value)
+        img_outg = signal.convolve2d(img1_np[:, :, 1], kernel, mode, boundary, fill_value)
+        img_outb = signal.convolve2d(img1_np[:, :, 2], kernel, mode, boundary, fill_value)
+        img_out = np.zeros((img_outr.shape[0], img_outr.shape[1], 3), dtype=np.uint8)
+        img_out[..., 0] = img_outr;
+        img_out[..., 1] = img_outg;
+        img_out[..., 2] = img_outb;
     else:
-        img_out = signal.convolve(img1_np, img2_np)
-
+        img_out = signal.convolve(img1_np, kernel, mode)
     return img_out
 
-def low_pass_filter_generator(dimension, degree):
-    box_filter = [dimension]
-    for i in range(dimension):
-        box_filter[i] = 1
+def box_filter_generator(shape=(3,3)):
+    ratio = 1/(shape[0]*shape[1])
+    box_filter = np.full(shape, ratio, dtype=np.float)
 
-    degree *= 2    #Because is a separete filter
     return box_filter
 
 def gaussian_filter_generator(shape = (3, 3), sigma = 0.5):
@@ -59,29 +63,48 @@ def gaussian_filter_generator(shape = (3, 3), sigma = 0.5):
 #        - 2: Roberts 
 #        - 3: Laplaciano 
 #
-def high_pass_filter(selected=0):
+def high_pass_filter(img_np, selected=0, channels=1):
     if selected == 0:
-        filter = [[-1, -1, -1],
-                  [ 0,  0,  0],
-                  [ 1,  1,  1]]
-        return filter, soma
+        filterx = [[-1,  0,  1],
+                  [-1, 0,  1],
+                  [-1,  0,  1]]
+        filtery = [[1,  1,  1],
+                  [0, 0,  0],
+                  [-1,  -1,  -1]]
+        gx = convolve(img_np, filterx, boundary='symm', channels = channels);          
+        gy = convolve(img_np, filtery, boundary='symm', channels = channels);
+        g = np.sqrt(np.multiply(gx, gx) + np.multiply(gy, gy));
+
+        return g[...,:].astype(np.uint8)
 
     elif selected == 1:
-        filter = [[-1, -2, -1],
-                  [ 0,  0,  0],
-                  [ 1,  2,  1]]
-        return filter
+        filterx = [[-1,  0,  1],
+                  [-2, 0,  2],
+                  [-1,  0,  1]]
+        filtery = [[1,  2,  1],
+                  [0, 0,  0],
+                  [-1,  -2,  -1]]
+        gx = convolve(img_np, filterx, boundary='symm', channels = channels);          
+        gy = convolve(img_np, filtery, boundary='symm', channels = channels);
+        g = np.sqrt(np.multiply(gx, gx) + np.multiply(gy, gy));
+
+        return g[...,:].astype(np.uint8)
 
     elif selected == 2:    # It needs to be completed
-        filter = [[ 1,  0],
-                  [ 0, -1]]
-        return filter
+        filterx = [[1,  0],
+                  [0, -1]]
+        filtery = [[0,  1],
+                  [-1, 0]]
+        gx = convolve(img_np, filterx, boundary='symm', channels = channels);          
+        gy = convolve(img_np, filtery, boundary='symm', channels = channels);
+        g = np.sqrt(np.multiply(gx, gx) + np.multiply(gy, gy));
 
+        return g[...,:].astype(np.uint8)
     elif selected == 3:
-        filter = [[0,  1,  0],
-                  [1, -4,  1],
-                  [0,  1,  0]]
-        return filter
+        filter = [[1,  1,  1],
+                  [1, -8,  1],
+                  [1,  1,  1]]
+        return convolve(img_np, filter, boundary='symm', channels = channels);
         
 #
 #    filter:
@@ -192,7 +215,7 @@ def fourier_transform_scipy(img_np, filter=0, radius1=10, radius2=5):
 #       - 2: ideal_high_pass_filter
 #       - 3: ideal_low_pass_filter
 #
-def fourier_transform(img_np, filter=0, radius1=10, radius2=5):
+def fourier_transform(img_np, filter=0, radius1=10, radius2=5, img_name='out.png'):
     img_aux = np.asarray(img_np).reshape(-1)
 
     img_as_list = list(img_aux)
@@ -240,12 +263,12 @@ def fourier_transform(img_np, filter=0, radius1=10, radius2=5):
                 phase_angle[u][v][1] = np.uint8(np.arctan(img_imag_ft[i+1] / img_real_ft[i+1]))
                 phase_angle[u][v][2] = np.uint8(np.arctan(img_imag_ft[i+2] / img_real_ft[i+2]))
 
-    save_image(magnitude, 'magnitude.png')
-    save_image(phase_angle, 'phase_angle.png')
+    save_image(magnitude, img_name+' - Magnitude.png')
+    save_image(phase_angle, img_name+' - Phase_angle.png')
     
     #Inverse
 
-    img_inverse_out = [0] * len(img_aux)
+    '''img_inverse_out = [0] * len(img_aux)
     img_inverse_out = (c_int * len(img_inverse_out)) (*img_inverse_out)
 
     dll.Inverse_fourier_transform(img_real_ft, img_imag_ft, img_inverse_out)
@@ -260,14 +283,14 @@ def fourier_transform(img_np, filter=0, radius1=10, radius2=5):
             img_np_inverse_out[u][v][2] = img_inverse_out[i+2]
 
 
-    save_image(img_np_inverse_out, 'inverse_out.png')
+    save_image(img_np_inverse_out, img_name+'inverse_out.png')
 
     mean_square_error(img_np, img_np_inverse_out, img_np.shape[2])
 
-    signal_to_noise_ration(img_np, img_np_inverse_out, img_np.shape[2])
+    signal_to_noise_ration(img_np, img_np_inverse_out, img_np.shape[2])'''
 
 
-def resize(img_np, perc, depth, type, kind="linear"):
+def resize(img_np, perc, depth, type, kind='linear', img_name='out.png'):
     width, height = img_np.shape[:2]
     new_width = int(width * perc)
     new_height = int(height * perc)
@@ -275,48 +298,49 @@ def resize(img_np, perc, depth, type, kind="linear"):
     img_scaled = np.zeros((new_width, new_height, depth), dtype=np.uint8)
     
     if perc == 1.0:
-        return img_np;
+        img_scaled = img_np;
     elif perc > 1.0:
-        if type == "nearest":
+        if type == 'nearest':
             for i in range(new_width):
                 for j in range(new_height):
                     img_scaled[i, j] = img_np[int(i/perc), int(j/perc)]
-        elif type == "interpolation":
+        elif type == 'interpolation':
             x = []
             for i in range(width):
                 x.append(int(round((i/width) * new_width)))
             endcols = max(x);
             for i in range(new_height):
-                l = int((i/new_height) * height);
-                pr = interpolate.interp1d(x, img_np[l, : , 0], kind);
-                pg = interpolate.interp1d(x, img_np[l, : , 1], kind);
-                pb = interpolate.interp1d(x, img_np[l, : , 2], kind);
+                l = int((i/new_height) * height)
+
+                pr = interpolate.interp1d(x, img_np[l,:,0], kind)
+                pg = interpolate.interp1d(x, img_np[l,:,1], kind)
+                pb = interpolate.interp1d(x, img_np[l,:,2], kind)
+
                 for j in range(endcols):
-                    img_scaled[i, j] = [np.uint8(pr(j)), np.uint8(pg(j)), np.uint8(pb(j))];
+                    img_scaled[i, j] = [np.uint8(pr(j)), np.uint8(pg(j)), np.uint8(pb(j))]
+
                 for j in range(endcols, new_width):
-                    img_scaled[i, j] = [np.uint8(pr(endcols)), np.uint8(pg(endcols)), np.uint8(pb(endcols))];
+                    img_scaled[i, j] = [np.uint8(pr(endcols)), np.uint8(pg(endcols)), np.uint8(pb(endcols))]
     else:
-        if type == "pontual":
+        if type == 'pontual':
             for i in range(new_width):
-                    for j in range(new_height):
-                        img_scaled[i, j] = img_np[int(i/perc), int(j/perc)]
-        elif type == "area":
+                for j in range(new_height):
+                    img_scaled[i, j] = img_np[int(i/perc), int(j/perc)]
+        elif type == 'area':
             for i in range(new_width):
-                    for j in range(new_height):
-                        k = int(i/perc);
-                        l = int(j/perc);
-                        media = np.zeros(3);
-                        t = 0;
-                        for m in range(k-1, k+2):
-                            for n in range(l-1, l+2):
-                                if (m >= 0 and n >= 0 and m != k and n != l):
-                                    media = media + img_np[m,n]
-                                    t+=1;
-                        img_scaled[i, j] = np.uint8(media/t) 
+                for j in range(new_height):
+                    k = int(i/perc);
+                    l = int(j/perc);
+                    media = np.zeros(3);
+                    t = 0;
+                    for m in range(k-1, k+2):
+                        for n in range(l-1, l+2):
+                            if (m >= 0 and n >= 0 and m != k and n != l):
+                                media = media + img_np[m,n]
+                                t+=1;
+                    img_scaled[i, j] = np.uint8(media/t) 
+
+    save_image(img_scaled, img_name)
+
     return img_scaled
-    #save_image(img_np_inverse_out, 'inverse_out.png')
-
-    #mean_square_error(img_np, img_np_inverse_out, img_np.shape[2])
-
-    #signal_to_noise_ration(img_np, img_np_inverse_out, img_np.shape[2])
 
