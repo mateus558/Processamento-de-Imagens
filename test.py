@@ -13,7 +13,7 @@ img_name = 'lena'
 #img_name_in = img_name+'.jpg'
 img_name_in = img_name+'.jpg'
 
-channels = 3
+channels = 1
 img = open_image(img_name_in, channels)
 img = pil_to_np(img)
 
@@ -35,7 +35,7 @@ fimg = high_pass_filter(img, selected=2,channels=channels)
 save_image(fimg, "wiki_roberts_filter_gray.png")
 
 fimg = high_pass_filter(img, selected=3,channels=channels)
-save_image(fimg, "wiki_laplacian_filter.png")
+save_image(fimg, "wiki_laplacian_filter_gray.png")
 
 
 '''
