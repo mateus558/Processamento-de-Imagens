@@ -39,7 +39,7 @@ def show_image_np(img, channels):
         viewer = ImageViewer(img)
         viewer.show()
         skimage.imshow(img)
-        return;
+        return
     '''
     if channels == 1:
         plt.imshow(img, cmap='gray')

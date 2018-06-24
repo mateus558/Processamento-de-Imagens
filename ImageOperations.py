@@ -1,14 +1,13 @@
 import subprocess
 import numpy as np
 from numpy import fft
-from Utils import *
-#import scipy.special, scipy.signal
 from scipy import signal
 from scipy import special
 import matplotlib.pyplot as plt
-from ErrorMetrics import *
 from scipy import interpolate
 from ctypes import *
+from Utils import *
+from ErrorMetrics import *
 
 dll = CDLL('Fourier-Transform/bin/Debug/libFourier-Transform.dll')
 
@@ -20,19 +19,35 @@ dll = CDLL('Fourier-Transform/bin/Debug/libFourier-Transform.dll')
 #    
 #    fill_value: valor da constante
 #
-def convolve(img1_np, kernel, mode = "full", boundary='fill', fill_value=0, channels = 1):
+def convolve(img_np, kernel, mode='same', boundary='symm', fill_value=0, channels=1):
     
     if channels == 3:
-        img_outr = signal.convolve2d(img1_np[:, :, 0], kernel, mode, boundary, fill_value)
-        img_outg = signal.convolve2d(img1_np[:, :, 1], kernel, mode, boundary, fill_value)
-        img_outb = signal.convolve2d(img1_np[:, :, 2], kernel, mode, boundary, fill_value)
-        img_out = np.zeros((img_outr.shape[0], img_outr.shape[1], 3), dtype=np.uint8)
-        img_out[..., 0] = img_outr;
-        img_out[..., 1] = img_outg;
-        img_out[..., 2] = img_outb;
+        img_outr = signal.convolve2d(img_np[:, :, 0], kernel, mode, boundary, fill_value)
+        img_outg = signal.convolve2d(img_np[:, :, 1], kernel, mode, boundary, fill_value)
+        img_outb = signal.convolve2d(img_np[:, :, 2], kernel, mode, boundary, fill_value)
+
+        img_out = np.zeros((img_np.shape[0], img_np.shape[1], img_np.shape[2]), dtype=np.uint8)
+
+        img_out[..., 0] = img_outr
+        img_out[..., 1] = img_outg
+        img_out[..., 2] = img_outb
+
     else:
-        img_out = signal.convolve(img1_np, kernel, mode)
+        img_out = signal.convolve(img_np, kernel, mode)
+
+    return np.uint8(img_out)
+
+
+def blur_and_highlight_filter(img_np, w, dimension):
+    gauss_filter = np.array(gaussian_filter_generator(shape=(dimension,dimension), sigma=1))
+    img_filtered = convolve(img_np, gauss_filter, boundary='symm', channels=3)
+
+    img_out = np.zeros((img_np.shape[0], img_np.shape[1], img_np.shape[2]), dtype=np.uint8)
+
+    img_out = np.uint8((1 + w) * img_np - (w * img_filtered))
+
     return img_out
+
 
 def box_filter_generator(shape=(3,3)):
     ratio = 1/(shape[0]*shape[1])
@@ -40,12 +55,8 @@ def box_filter_generator(shape=(3,3)):
 
     return box_filter
 
-def gaussian_filter_generator(shape = (3, 3), sigma = 0.5):
-    '''gaussian_filter = [dimension]
-    for i in range(dimension):
-        gaussian_filter[i] = special.comb(dimension, i)    #or special.binom(dimension, i)
 
-    return gaussian_filter'''
+def gaussian_filter_generator(shape = (3, 3), sigma = 0.5):
     m,n = [(ss-1.)/2. for ss in shape]
     y,x = np.ogrid[-m:m+1,-n:n+1]
     h = np.exp( -(x*x + y*y) / (2.*sigma*sigma) )
@@ -56,56 +67,73 @@ def gaussian_filter_generator(shape = (3, 3), sigma = 0.5):
 
     return h
 
+
 #
 #    selected:
 #        - 0: Prewitt
 #        - 1: Sobel
-#        - 2: Roberts 
-#        - 3: Laplaciano 
+#        - 2: Roberts
+#        - 3: Laplacian
 #
 def high_pass_filter(img_np, selected=0, channels=1):
-    if selected == 0:
+    if selected == 0:   #Prewitt
+
         filterx = [[-1,  0,  1],
-                  [-1, 0,  1],
-                  [-1,  0,  1]]
-        filtery = [[1,  1,  1],
-                  [0, 0,  0],
-                  [-1,  -1,  -1]]
-        gx = convolve(img_np, filterx, boundary='symm', channels = channels);          
-        gy = convolve(img_np, filtery, boundary='symm', channels = channels);
-        g = np.sqrt(np.multiply(gx, gx) + np.multiply(gy, gy));
+                   [-1,  0,  1],
+                   [-1,  0,  1]]
+
+        filtery = [[ 1,  1,  1],
+                   [ 0,  0,  0],
+                   [-1, -1, -1]]
+
+        gx = convolve(img_np, np.array(filterx), boundary='symm', channels=channels)
+        gy = convolve(img_np, np.array(filtery), boundary='symm', channels=channels)
+
+        g = np.sqrt(np.multiply(gx, gx) + np.multiply(gy, gy))
 
         return g[...,:].astype(np.uint8)
 
-    elif selected == 1:
+    elif selected == 1: #Sobel
+
         filterx = [[-1,  0,  1],
-                  [-2, 0,  2],
-                  [-1,  0,  1]]
-        filtery = [[1,  2,  1],
-                  [0, 0,  0],
-                  [-1,  -2,  -1]]
-        gx = convolve(img_np, filterx, boundary='symm', channels = channels);          
-        gy = convolve(img_np, filtery, boundary='symm', channels = channels);
-        g = np.sqrt(np.multiply(gx, gx) + np.multiply(gy, gy));
+                   [-2,  0,  2],
+                   [-1,  0,  1]]
+
+        filtery = [[ 1,  2,  1],
+                   [ 0,  0,  0],
+                   [-1, -2, -1]]
+
+        gx = convolve(img_np, np.array(filterx), boundary='symm', channels=channels)
+        gy = convolve(img_np, np.array(filtery), boundary='symm', channels=channels)
+
+        g = np.sqrt(np.multiply(gx, gx) + np.multiply(gy, gy))
 
         return g[...,:].astype(np.uint8)
 
-    elif selected == 2:    # It needs to be completed
+    elif selected == 2: #Roberts
+
         filterx = [[1,  0],
-                  [0, -1]]
-        filtery = [[0,  1],
-                  [-1, 0]]
-        gx = convolve(img_np, filterx, boundary='symm', channels = channels);          
-        gy = convolve(img_np, filtery, boundary='symm', channels = channels);
-        g = np.sqrt(np.multiply(gx, gx) + np.multiply(gy, gy));
+                   [0, -1]]
+
+        filtery = [[ 0, 1],
+                   [-1, 0]]
+
+        gx = convolve(img_np, np.array(filterx), boundary='symm', channels=channels)
+        gy = convolve(img_np, np.array(filtery), boundary='symm', channels=channels)
+
+        g = np.sqrt(np.multiply(gx, gx) + np.multiply(gy, gy))
 
         return g[...,:].astype(np.uint8)
-    elif selected == 3:
+
+    elif selected == 3: #Laplacian
+
         filter = [[1,  1,  1],
                   [1, -8,  1],
                   [1,  1,  1]]
-        return convolve(img_np, filter, boundary='symm', channels = channels);
-        
+
+        return convolve(img_np, np.array(filter), boundary='symm', channels = channels)
+      
+
 #
 #    filter:
 #        - 1: ideal_band_pass_filter
@@ -121,6 +149,7 @@ def ideal_pass_filter(img_real, img_imag, width, height,filter, radius1=10, radi
 
     center_x = int(height / 2)
     center_y = int(width / 2)
+
     for i in range(0, height):
         for j in range (0, width):
             distance = np.sqrt((i - center_x)**2 + (j - center_y)**2)
@@ -142,50 +171,53 @@ def ideal_pass_filter(img_real, img_imag, width, height,filter, radius1=10, radi
     return img_real, img_imag
 
 
-def fourier_transform_scipy(img_np, filter=0, radius1=10, radius2=5):
+def magnitude_and_phase_calculator(img_real, img_imag, height, width, channels, img_name='out'):
+
+    magnitude = np.zeros((height, width, channels), dtype=np.uint8)
+    phase_angle = np.zeros((height, width, channels), dtype=np.uint8)
+
+    for u in range (height):
+        for v in range (width):
+            i = (u*width*channels)+(v*channels)
+
+            magnitude[u][v][0] = np.uint8(np.sqrt(img_real[i]**2   + img_imag[i]**2))
+            magnitude[u][v][1] = np.uint8(np.sqrt(img_real[i+1]**2 + img_imag[i+1]**2))
+            magnitude[u][v][2] = np.uint8(np.sqrt(img_real[i+2]**2 + img_imag[i+2]**2))
+
+            if img_real[i] == 0.0:
+                if img_imag[i] >= 0.0:
+                    phase_angle[u][v][0] = 90.0
+                else:
+                    phase_angle[u][v][0] = -90.0
+
+                if img_imag[i+1] >= 0.0:
+                    phase_angle[u][v][1] = 90.0
+                else:
+                    phase_angle[u][v][1] = -90.0
+
+                if img_imag[i+2] >= 0.0:
+                    phase_angle[u][v][2] = 90.0
+                else:
+                    phase_angle[u][v][2] = -90.0
+            else:
+                phase_angle[u][v][0] = np.uint8(np.arctan(img_imag[i]   / img_real[i]))
+                phase_angle[u][v][1] = np.uint8(np.arctan(img_imag[i+1] / img_real[i+1]))
+                phase_angle[u][v][2] = np.uint8(np.arctan(img_imag[i+2] / img_real[i+2]))
+
+    save_image(magnitude, img_name+' - Magnitude_scipy.png')
+    save_image(phase_angle, img_name+' - Phase_angle_scipy.png')
+
+
+def fourier_transform_scipy(img_np, filter=0, radius1=10, radius2=5, img_name='out'):
     img_as_array = np.asarray(img_np).reshape(-1)
     img_as_array_out = np.fft.fft(img_as_array)
 
     if filter != 0 and filter < 4:
         img_as_array_out.real, img_as_array_out.imag = ideal_pass_filter(img_as_array_out.real, img_as_array_out.imag, img_np.shape[0], img_np.shape[1], filter, radius1, radius2)
 
-
-    magnitude = np.zeros((img_np.shape[0], img_np.shape[1], img_np.shape[2]), dtype=np.uint8)
-    phase_angle = np.zeros((img_np.shape[0], img_np.shape[1], img_np.shape[2]), dtype=np.uint8)
-
-    width = img_np.shape[1]
-
-    for u in range (img_np.shape[0]):
-        for v in range (img_np.shape[1]):
-            i = (u*width*3)+(v*3)
-            magnitude[u][v][0] = np.uint8(np.sqrt(img_as_array_out[i].real**2   + img_as_array_out[i].imag**2))
-            magnitude[u][v][1] = np.uint8(np.sqrt(img_as_array_out[i+1].real**2 + img_as_array_out[i+1].imag**2))
-            magnitude[u][v][2] = np.uint8(np.sqrt(img_as_array_out[i+2].real**2 + img_as_array_out[i+2].imag**2))
-            if img_as_array_out[i].real == 0.0:
-                if img_as_array_out[i].imag >= 0.0:
-                    phase_angle[u][v][0] = 90.0
-                else:
-                    phase_angle[u][v][0] = -90.0
-
-                if img_as_array_out[i+1].imag >= 0.0:
-                    phase_angle[u][v][1] = 90.0
-                else:
-                    phase_angle[u][v][1] = -90.0
-
-                if img_as_array_out[i+2].imag >= 0.0:
-                    phase_angle[u][v][2] = 90.0
-                else:
-                    phase_angle[u][v][2] = -90.0
-            else:
-                phase_angle[u][v][0] = np.uint8(np.arctan(img_as_array_out[i].imag   / img_as_array_out[i].real))
-                phase_angle[u][v][1] = np.uint8(np.arctan(img_as_array_out[i+1].imag / img_as_array_out[i+1].real))
-                phase_angle[u][v][2] = np.uint8(np.arctan(img_as_array_out[i+2].imag / img_as_array_out[i+2].real))
-
-    save_image(magnitude, 'magnitude_scipy.png')
-    save_image(phase_angle, 'phase_angle_scipy.png')
+    magnitude_and_phase_calculator(img_as_array_out.real, img_as_array_out.imag, img_np.shape[0], img_np.shape[1], img_np.shape[2], img_name)
 
     img_inverse_out = np.fft.ifft(img_as_array_out)
-
 
     img_np_inverse_out = np.zeros((img_np.shape[0], img_np.shape[1], img_np.shape[2]), dtype=np.uint8)
 
@@ -201,7 +233,7 @@ def fourier_transform_scipy(img_np, filter=0, radius1=10, radius2=5):
 
     print('\nFT Scipy')
 
-    save_image(img_np_inverse_out, 'inverse_out_scipy.png')
+    save_image(img_np_inverse_out, img_name+' - Inverse_out_scipy.png')
 
     mean_square_error(img_np, img_np_inverse_out, img_np.shape[2])
 
@@ -215,7 +247,7 @@ def fourier_transform_scipy(img_np, filter=0, radius1=10, radius2=5):
 #       - 2: ideal_high_pass_filter
 #       - 3: ideal_low_pass_filter
 #
-def fourier_transform(img_np, filter=0, radius1=10, radius2=5, img_name='out.png'):
+def fourier_transform(img_np, filter=0, radius1=10, radius2=5, img_name='out'):
     img_aux = np.asarray(img_np).reshape(-1)
 
     img_as_list = list(img_aux)
@@ -227,10 +259,9 @@ def fourier_transform(img_np, filter=0, radius1=10, radius2=5, img_name='out.png
     img_imag_ft = [0] * len(img_as_list)
     img_imag_ft = (c_double * len(img_as_list)) (*img_as_list)
 
-    print('\nFT Implemented')
-
-
     dll.Fourier_transform(img_as_list, c_int(img_np.shape[0]), c_int(img_np.shape[1]), img_real_ft, img_imag_ft, c_int(filter), c_int(radius1), c_int(radius2))
+
+    magnitude_and_phase_calculator(img_real_ft, img_imag_ft, img_np.shape[0], img_np.shape[1], img_np.shape[2], img_name)
 
     magnitude = np.zeros((img_np.shape[0], img_np.shape[1], img_np.shape[2]), dtype=np.uint8)
     phase_angle = np.zeros((img_np.shape[0], img_np.shape[1], img_np.shape[2]), dtype=np.uint8)
@@ -265,15 +296,20 @@ def fourier_transform(img_np, filter=0, radius1=10, radius2=5, img_name='out.png
 
     save_image(magnitude, img_name+' - Magnitude.png')
     save_image(phase_angle, img_name+' - Phase_angle.png')
-    
-    #Inverse
 
-    '''img_inverse_out = [0] * len(img_aux)
+    return img_real_ft, img_imag_ft
+
+
+def inverse_fourier_transform(img_np, img_real_ft, img_imag_ft, img_name='out'):
+    img_aux = np.asarray(img_np).reshape(-1)
+    img_inverse_out = [0] * len(img_aux)
     img_inverse_out = (c_int * len(img_inverse_out)) (*img_inverse_out)
 
     dll.Inverse_fourier_transform(img_real_ft, img_imag_ft, img_inverse_out)
 
     img_np_inverse_out = np.zeros((img_np.shape[0], img_np.shape[1], img_np.shape[2]), dtype=np.uint8)
+
+    width = img_np.shape[1]
 
     for u in range (img_np.shape[0]):
         for v in range (img_np.shape[1]):
@@ -282,23 +318,24 @@ def fourier_transform(img_np, filter=0, radius1=10, radius2=5, img_name='out.png
             img_np_inverse_out[u][v][1] = img_inverse_out[i+1]
             img_np_inverse_out[u][v][2] = img_inverse_out[i+2]
 
+    print('\nFT Implemented')
 
-    save_image(img_np_inverse_out, img_name+'inverse_out.png')
+    save_image(img_np_inverse_out, img_name+' - Inverse_out.png')
 
     mean_square_error(img_np, img_np_inverse_out, img_np.shape[2])
 
-    signal_to_noise_ration(img_np, img_np_inverse_out, img_np.shape[2])'''
+    signal_to_noise_ration(img_np, img_np_inverse_out, img_np.shape[2])
 
 
-def resize(img_np, perc, depth, type, kind='linear', img_name='out.png'):
+def resize(img_np, perc, channels, type, kind='linear', img_name='out'):
     width, height = img_np.shape[:2]
     new_width = int(width * perc)
     new_height = int(height * perc)
 
-    img_scaled = np.zeros((new_width, new_height, depth), dtype=np.uint8)
+    img_scaled = np.zeros((new_width, new_height, channels), dtype=np.uint8)
     
     if perc == 1.0:
-        img_scaled = img_np;
+        img_scaled = img_np
     elif perc > 1.0:
         if type == 'nearest':
             for i in range(new_width):
@@ -308,7 +345,7 @@ def resize(img_np, perc, depth, type, kind='linear', img_name='out.png'):
             x = []
             for i in range(width):
                 x.append(int(round((i/width) * new_width)))
-            endcols = max(x);
+            endcols = max(x)
             for i in range(new_height):
                 l = int((i/new_height) * height)
 
@@ -329,18 +366,18 @@ def resize(img_np, perc, depth, type, kind='linear', img_name='out.png'):
         elif type == 'area':
             for i in range(new_width):
                 for j in range(new_height):
-                    k = int(i/perc);
-                    l = int(j/perc);
-                    media = np.zeros(3);
-                    t = 0;
+                    k = int(i/perc)
+                    l = int(j/perc)
+                    media = np.zeros(3)
+                    t = 0
                     for m in range(k-1, k+2):
                         for n in range(l-1, l+2):
                             if (m >= 0 and n >= 0 and m != k and n != l):
                                 media = media + img_np[m,n]
-                                t+=1;
+                                t+=1
                     img_scaled[i, j] = np.uint8(media/t) 
 
-    save_image(img_scaled, img_name)
+    save_image(img_scaled, img_name+'.png')
 
     return img_scaled
 

@@ -1,0 +1,61 @@
+# depslib dependency file v1.0
+1528119041 source:c:\users\kevyn\desktop\fourier-transform\fourier-transform.cpp
+	"Fourier-Transform.h"
+	<iostream>
+	<stdlib.h>
+	<complex>
+	<complex.h>
+
+1528120423 c:\users\kevyn\desktop\fourier-transform\fourier-transform.h
+
+1528120432 source:c:\users\kevyn\desktop\fourier-transform\main.c
+	"Fourier-Transform.h"
+
+1528826497 source:c:\users\kevyn\desktop\trabalho-1-de-processamento-de-imagens\fourier-transform\main.c
+	"Fourier-Transform.h"
+	"main.h"
+
+1528826354 c:\users\kevyn\desktop\trabalho-1-de-processamento-de-imagens\fourier-transform\fourier-transform.h
+
+1528826354 source:c:\users\kevyn\desktop\trabalho-1-de-processamento-de-imagens\fourier-transform\fourier-transform.cpp
+	"Fourier-Transform.h"
+	<iostream>
+	<stdio.h>
+	<stdlib.h>
+	<complex>
+	<complex.h>
+
+1528826504 c:\users\kevyn\desktop\trabalho-1-de-processamento-de-imagens\fourier-transform\main.h
+	<stdlib.h>
+
+1529412084 source:d:\documentos\github\trabalho-1-de-processamento-de-imagens\fourier-transform\fourier-transform.cpp
+	"Fourier-Transform.h"
+	<iostream>
+	<stdlib.h>
+	<complex>
+	<complex.h>
+
+1528826354 d:\documentos\github\trabalho-1-de-processamento-de-imagens\fourier-transform\fourier-transform.h
+
+1528826497 source:d:\documentos\github\trabalho-1-de-processamento-de-imagens\fourier-transform\main.c
+	"Fourier-Transform.h"
+	"main.h"
+
+1528826504 d:\documentos\github\trabalho-1-de-processamento-de-imagens\fourier-transform\main.h
+	<stdlib.h>
+
+1529796446 source:d:\documentos\github\trabalho-1-de-processamento-de-imagens\cosine-transform\cosine-transform.cpp
+	"Cosine-Transform.h"
+	<iostream>
+	<stdlib.h>
+	<math.h>
+
+1529796461 d:\documentos\github\trabalho-1-de-processamento-de-imagens\cosine-transform\cosine-transform.h
+
+1529796358 source:d:\documentos\github\trabalho-1-de-processamento-de-imagens\cosine-transform\main.c
+	"Cosine-Transform.h"
+	"main.h"
+
+1529796499 d:\documentos\github\trabalho-1-de-processamento-de-imagens\cosine-transform\main.h
+	<stdlib.h>
+
