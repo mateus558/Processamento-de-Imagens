@@ -23,9 +23,9 @@ dll = CDLL('Fourier-Transform/bin/Debug/libFourier-Transform.dll')
 def convolve(img1_np, kernel, mode = "full", boundary='fill', fill_value=0, channels = 1):
     
     if channels == 3:
-        img_outr = signal.convolve2d(img1_np[:, :, 0], kernel, mode, boundary, fill_value)
-        img_outg = signal.convolve2d(img1_np[:, :, 1], kernel, mode, boundary, fill_value)
-        img_outb = signal.convolve2d(img1_np[:, :, 2], kernel, mode, boundary, fill_value)
+        img_outr = signal.convolve(img1_np[:, :, 0], kernel, mode)
+        img_outg = signal.convolve(img1_np[:, :, 1], kernel, mode)
+        img_outb = signal.convolve(img1_np[:, :, 2], kernel, mode)
         img_out = np.zeros((img_outr.shape[0], img_outr.shape[1], 3), dtype=np.uint8)
         img_out[..., 0] = img_outr;
         img_out[..., 1] = img_outg;
@@ -64,6 +64,8 @@ def gaussian_filter_generator(shape = (3, 3), sigma = 0.5):
 #        - 3: Laplaciano 
 #
 def high_pass_filter(img_np, selected=0, channels=1):
+    img = img_np/255
+
     if selected == 0:
         filterx = [[-1,  0,  1],
                   [-1, 0,  1],
@@ -71,11 +73,26 @@ def high_pass_filter(img_np, selected=0, channels=1):
         filtery = [[1,  1,  1],
                   [0, 0,  0],
                   [-1,  -1,  -1]]
-        gx = convolve(img_np, filterx, boundary='symm', channels = channels);          
-        gy = convolve(img_np, filtery, boundary='symm', channels = channels);
-        g = np.sqrt(np.multiply(gx, gx) + np.multiply(gy, gy));
 
-        return g[...,:].astype(np.uint8)
+        gx = convolve(img*2, filterx, boundary='symm', channels = channels);          
+        gy = convolve(img*2, filtery, boundary='symm', channels = channels);
+
+        if channels == 1:
+            g = np.sqrt(gx * gx + gy * gy);
+        elif channels == 3:
+            rx = gx[..., 0]
+            grx = gx[..., 1]
+            bx = gx[..., 2]
+            ry = gy[..., 0]
+            gry = gy[..., 1]
+            by = gy[..., 2]
+
+            Jx = np.multiply(rx, rx) + np.multiply(grx, grx) + np.multiply(bx, bx);
+            Jy = np.multiply(ry, ry) + np.multiply(gry, gry) + np.multiply(by, by);
+            Jxy = np.multiply(rx, ry) + np.multiply(grx, gry) + np.multiply(bx, by);
+            D = np.sqrt(np.abs(np.multiply(Jx, Jx) - 2*np.multiply(Jx, Jy) + np.multiply(Jx, Jy) + 4*np.multiply(Jxy, Jxy)));
+            e1 = (Jx + Jy + D) / 2;
+            g = np.sqrt(e1);
 
     elif selected == 1:
         filterx = [[-1,  0,  1],
@@ -84,27 +101,62 @@ def high_pass_filter(img_np, selected=0, channels=1):
         filtery = [[1,  2,  1],
                   [0, 0,  0],
                   [-1,  -2,  -1]]
-        gx = convolve(img_np, filterx, boundary='symm', channels = channels);          
-        gy = convolve(img_np, filtery, boundary='symm', channels = channels);
-        g = np.sqrt(np.multiply(gx, gx) + np.multiply(gy, gy));
 
-        return g[...,:].astype(np.uint8)
+        gx = convolve(img*2, filterx, boundary='symm', channels = channels);          
+        gy = convolve(img*2, filtery, boundary='symm', channels = channels);
+
+        if channels == 1:
+            g = np.sqrt(gx * gx + gy * gy);
+        elif channels == 3:
+            rx = gx[..., 0]
+            grx = gx[..., 1]
+            bx = gx[..., 2]
+            ry = gy[..., 0]
+            gry = gy[..., 1]
+            by = gy[..., 2]
+
+            Jx = np.multiply(rx, rx) + np.multiply(grx, grx) + np.multiply(bx, bx);
+            Jy = np.multiply(ry, ry) + np.multiply(gry, gry) + np.multiply(by, by);
+            Jxy = np.multiply(rx, ry) + np.multiply(grx, gry) + np.multiply(bx, by);
+            D = np.sqrt(np.abs(np.multiply(Jx, Jx) - 2*np.multiply(Jx, Jy) + np.multiply(Jx, Jy) + 4*np.multiply(Jxy, Jxy)));
+            e1 = (Jx + Jy + D) / 2;
+            g = np.sqrt(e1);
 
     elif selected == 2:    # It needs to be completed
         filterx = [[1,  0],
                   [0, -1]]
         filtery = [[0,  1],
                   [-1, 0]]
-        gx = convolve(img_np, filterx, boundary='symm', channels = channels);          
-        gy = convolve(img_np, filtery, boundary='symm', channels = channels);
-        g = np.sqrt(np.multiply(gx, gx) + np.multiply(gy, gy));
 
-        return g[...,:].astype(np.uint8)
+        gx = convolve(img*10, filterx, boundary='symm', channels = channels);          
+        gy = convolve(img*10, filtery, boundary='symm', channels = channels);
+
+        if channels == 1:
+            g = np.sqrt(gx * gx + gy * gy);
+        elif channels == 3:
+            rx = gx[..., 0]
+            grx = gx[..., 1]
+            bx = gx[..., 2]
+            ry = gy[..., 0]
+            gry = gy[..., 1]
+            by = gy[..., 2]
+
+            Jx = np.multiply(rx, rx) + np.multiply(grx, grx) + np.multiply(bx, bx);
+            Jy = np.multiply(ry, ry) + np.multiply(gry, gry) + np.multiply(by, by);
+            Jxy = np.multiply(rx, ry) + np.multiply(grx, gry) + np.multiply(bx, by);
+            D = np.sqrt(np.abs(np.multiply(Jx, Jx) - 2*np.multiply(Jx, Jy) + np.multiply(Jx, Jy) + 4*np.multiply(Jxy, Jxy)));
+            e1 = (Jx + Jy + D) / 2;
+            g = np.sqrt(e1);
+
     elif selected == 3:
-        filter = [[1,  1,  1],
+        filter = np.array([[1,  1,  1],
                   [1, -8,  1],
-                  [1,  1,  1]]
-        return convolve(img_np, filter, boundary='symm', channels = channels);
+                  [1,  1,  1]])
+
+        return convolve(img*5, filter, boundary='symm', channels = channels);
+        
+    g*=255;
+    return g[...,:].astype(np.uint8)
         
 #
 #    filter:
