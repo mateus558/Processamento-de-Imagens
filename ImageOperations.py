@@ -22,9 +22,9 @@ dll = CDLL('Fourier-Transform/bin/Debug/libFourier-Transform.dll')
 def convolve(img_np, kernel, mode='same', boundary='symm', fill_value=0, channels=1):
     
     if channels == 3:
-        img_outr = signal.convolve(img1_np[:, :, 0], kernel, mode)
-        img_outg = signal.convolve(img1_np[:, :, 1], kernel, mode)
-        img_outb = signal.convolve(img1_np[:, :, 2], kernel, mode)
+        img_outr = signal.convolve(img_np[:, :, 0], kernel, mode)
+        img_outg = signal.convolve(img_np[:, :, 1], kernel, mode)
+        img_outb = signal.convolve(img_np[:, :, 2], kernel, mode)
         img_out = np.zeros((img_outr.shape[0], img_outr.shape[1], 3), dtype=np.uint8)
         img_out[..., 0] = img_outr;
         img_out[..., 1] = img_outg;
