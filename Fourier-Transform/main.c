@@ -9,6 +9,3 @@ extern "C"{
         inverse_fourier_transform(img_real, img_imag, img);
     }
 }
-
-
-
