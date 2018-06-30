@@ -8,23 +8,20 @@
 using namespace std;
 
 double ***f;
-int height_aux, width_aux, channels = 3;
+int height = 8, width = 8, channels = 3;
 
 void init(){
-    f = (double***) malloc(height_aux * sizeof(double**));
+    f = (double***) malloc(height * sizeof(double**));
 
-    for(int i=0; i<height_aux; ++i){
-        f[i] = (double**)malloc(width_aux * sizeof(double*));
-        for(int j=0; j<width_aux; ++j){
+    for(int i=0; i<height; ++i){
+        f[i] = (double**)malloc(width * sizeof(double*));
+        for(int j=0; j<width; ++j){
             f[i][j] = (double*)malloc(channels * sizeof(double));
         }
     }
 }
 
-void cosine_transform(int* img, int height, int width, double* img_out){
-    height_aux = height;
-    width_aux = width;
-
+void cosine_transform(int* img, double* img_out){
     init();
 
     int indice;
@@ -39,8 +36,8 @@ void cosine_transform(int* img, int height, int width, double* img_out){
                 for(int y=0; y<width; y++){
                     indice = (x*width*3)+(y*3);
 
-                    division_x =  ((2*x + 1) * u * PI) / 16;
-                    division_y =  ((2*y + 1) * v * PI) / 16;
+                    division_x =  ((2*x + 1) * u * PI) / 16.0;
+                    division_y =  ((2*y + 1) * v * PI) / 16.0;
 
                     sum_r += img[indice]   * cos(division_x) * cos(division_y);
                     sum_g += img[indice+1] * cos(division_x) * cos(division_y);
@@ -54,9 +51,9 @@ void cosine_transform(int* img, int height, int width, double* img_out){
             if(v == 0)  C_v = 1.0 / sqrt(2);
             else    C_v = 1.0;
 
-            f[u][v][0] = sum_r * (C_u / 2) * (C_v / 2);
-            f[u][v][1] = sum_g * (C_u / 2) * (C_v / 2);
-            f[u][v][2] = sum_b * (C_u / 2) * (C_v / 2);
+            f[u][v][0] = sum_r * (C_u / 2.0) * (C_v / 2.0);
+            f[u][v][1] = sum_g * (C_u / 2.0) * (C_v / 2.0);
+            f[u][v][2] = sum_b * (C_u / 2.0) * (C_v / 2.0);
 
             indice = (u*width*3)+(v*3);
 
@@ -73,19 +70,19 @@ void inverse_cosine_transform(double* f_in, int* img){
     double C_u, C_v;
     double sum_r, sum_g, sum_b;
 
-    for(int x=0; x<height_aux; x++){
-        for(int y=0; y<width_aux; y++){
+    for(int x=0; x<height; x++){
+        for(int y=0; y<width; y++){
             sum_r = 0.0; sum_g = 0.0; sum_b = 0.0;
-            for(int u=0; u<height_aux; u++){
-                for(int v=0; v<width_aux; v++){
-                    indice = (u*width_aux*3)+(v*3);
+            for(int u=0; u<height; u++){
+                for(int v=0; v<width; v++){
+                    indice = (u*width*3)+(v*3);
 
                     f[u][v][0] = f_in[indice];
                     f[u][v][1] = f_in[indice+1];
                     f[u][v][2] = f_in[indice+2];
 
-                    division_x =  ((2*x + 1) * u * PI) / 16;
-                    division_y =  ((2*y + 1) * v * PI) / 16;
+                    division_x =  ((2*x + 1) * u * PI) / 16.0;
+                    division_y =  ((2*y + 1) * v * PI) / 16.0;
 
                     if(u == 0)  C_u = 1.0 / sqrt(2);
                     else    C_u = 1.0;
@@ -93,12 +90,12 @@ void inverse_cosine_transform(double* f_in, int* img){
                     if(v == 0)  C_v = 1.0 / sqrt(2);
                     else    C_v = 1.0;
 
-                    sum_r += f[u][v][0] * (C_u / 2) * (C_v / 2) * cos(division_x) * cos(division_y);
-                    sum_g += f[u][v][1] * (C_u / 2) * (C_v / 2) * cos(division_x) * cos(division_y);
-                    sum_b += f[u][v][2] * (C_u / 2) * (C_v / 2) * cos(division_x) * cos(division_y);
+                    sum_r += f[u][v][0] * (C_u / 2.0) * (C_v / 2.0) * cos(division_x) * cos(division_y);
+                    sum_g += f[u][v][1] * (C_u / 2.0) * (C_v / 2.0) * cos(division_x) * cos(division_y);
+                    sum_b += f[u][v][2] * (C_u / 2.0) * (C_v / 2.0) * cos(division_x) * cos(division_y);
                 }
             }
-            indice = (x*width_aux*3)+(y*3);
+            indice = (x*width*3)+(y*3);
 
             img[indice]   = sum_r;
             img[indice+1] = sum_g;

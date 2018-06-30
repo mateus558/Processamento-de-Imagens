@@ -3,10 +3,108 @@ import numpy as np
 from PIL import Image
 import sys
 import struct
-import bitarray
+#import bitarray    # Comentei pq não consegui instalar com o pip
+from ctypes import *
+
+dll = CDLL('Cosine-Transform/bin/Debug/libCosine-Transform.dll')
+
+def cosine_transform(img_np, channels=3, filter=0, radius1=10, radius2=5, img_name='out'):
+    size = 8 * 8 * channels
+
+    img_in_dct = [0] * size
+    img_in_dct = (c_int * size) (*img_in_dct)
+
+    img_out_dct = [0.0] * size
+    img_out_dct = (c_double * size) (*img_out_dct)
+
+    height = img_np.shape[0]
+    width  = img_np.shape[1]
+
+    mod_height = height % 8
+    mod_width  = width  % 8
+
+    img_out = np.zeros((img_np.shape[0], img_np.shape[1], img_np.shape[2]), dtype=np.float)
+
+    for i in range(0, height + mod_height, 8):
+        for j in range(0, width + mod_width, 8):
+
+            for x in range(8):
+                for y in range(8):
+                    k = (x*8*channels) + (y*channels)
+
+                    if(x+i < img_np.shape[0] and y+j < img_np.shape[1]):
+                        img_in_dct[k]   = img_np[x+i][y+j][0]
+                        img_in_dct[k+1] = img_np[x+i][y+j][1]
+                        img_in_dct[k+2] = img_np[x+i][y+j][2]
+
+                    else:
+                        img_in_dct[k]   = 0
+                        img_in_dct[k+1] = 0
+                        img_in_dct[k+2] = 0
+
+            dll.Cosine_transform(img_in_dct, img_out_dct)
+
+            for x in range(8):
+                for y in range(8):
+                    k = (x*8*channels) + (y*channels)
+
+                    if(x+i < img_np.shape[0] and y+j < img_np.shape[1]):
+                        img_out[x+i][y+j][0] = img_out_dct[k]
+                        img_out[x+i][y+j][1] = img_out_dct[k+1]
+                        img_out[x+i][y+j][2] = img_out_dct[k+2]
+
+    return img_out
+
+def inverse_cosine_transform(img_np, channels=3):
+    size = 8 * 8 * channels
+
+    img_in_dct = [0.0] * size
+    img_in_dct = (c_double * size) (*img_in_dct)
+
+    img_out_dct = [0] * size
+    img_out_dct = (c_int * size) (*img_out_dct)
+
+    height = img_np.shape[0]
+    width  = img_np.shape[1]
+
+    mod_height = height % 8
+    mod_width  = width  % 8
+
+    img_out = np.zeros((img_np.shape[0], img_np.shape[1], img_np.shape[2]), dtype=np.uint8)
+
+    for i in range(0, height + mod_height, 8):
+        for j in range(0, width + mod_width, 8):
+
+            for x in range(8):
+                for y in range(8):
+                    k = (x*8*channels) + (y*channels)
+
+                    if(x+i < img_np.shape[0] and y+j < img_np.shape[1]):
+                        img_in_dct[k]   = img_np[x+i][y+j][0]
+                        img_in_dct[k+1] = img_np[x+i][y+j][1]
+                        img_in_dct[k+2] = img_np[x+i][y+j][2]
+
+                    else:
+                        img_in_dct[k]   = 0
+                        img_in_dct[k+1] = 0
+                        img_in_dct[k+2] = 0
+
+            dll.Inverse_cosine_transform(img_in_dct, img_out_dct)
+
+            for x in range(8):
+                for y in range(8):
+                    k = (x*8*channels) + (y*channels)
+
+                    if(x+i < img_np.shape[0] and y+j < img_np.shape[1]):
+                        img_out[x+i][y+j][0] = np.uint8(img_out_dct[k])
+                        img_out[x+i][y+j][1] = np.uint8(img_out_dct[k+1])
+                        img_out[x+i][y+j][2] = np.uint8(img_out_dct[k+2])
+
+    return img_out
+
+
 
 class HuffNode:
-
     def __init__(self, pixel = None, left = None, right = None, freq = None):
         self.left = left
         self.right = right

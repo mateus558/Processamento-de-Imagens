@@ -298,40 +298,6 @@ def fourier_transform(img_np, filter=0, radius1=10, radius2=5, img_name='out'):
 
     magnitude_and_phase_calculator(img_real_ft, img_imag_ft, img_np.shape[0], img_np.shape[1], img_np.shape[2], img_name)
 
-    magnitude = np.zeros((img_np.shape[0], img_np.shape[1], img_np.shape[2]), dtype=np.uint8)
-    phase_angle = np.zeros((img_np.shape[0], img_np.shape[1], img_np.shape[2]), dtype=np.uint8)
-
-    width = img_np.shape[1]
-
-    for u in range (img_np.shape[0]):
-        for v in range (img_np.shape[1]):
-            i = (u*width*3)+(v*3)
-            magnitude[u][v][0] = np.uint8(np.sqrt(img_real_ft[i]**2 + img_imag_ft[i]**2))
-            magnitude[u][v][1] = np.uint8(np.sqrt(img_real_ft[i+1]**2 + img_imag_ft[i+1]**2))
-            magnitude[u][v][2] = np.uint8(np.sqrt(img_real_ft[i+2]**2 + img_imag_ft[i+2]**2))
-            if img_real_ft[i] == 0.0:
-                if img_imag_ft[i] >= 0.0:
-                    phase_angle[u][v][0] = 90.0
-                else:
-                    phase_angle[u][v][0] = -90.0
-
-                if img_imag_ft[i+1] >= 0.0:
-                    phase_angle[u][v][1] = 90.0
-                else:
-                    phase_angle[u][v][1] = -90.0
-
-                if img_imag_ft[i+2] >= 0.0:
-                    phase_angle[u][v][2] = 90.0
-                else:
-                    phase_angle[u][v][2] = -90.0
-            else:
-                phase_angle[u][v][0] = np.uint8(np.arctan(img_imag_ft[i] / img_real_ft[i]))
-                phase_angle[u][v][1] = np.uint8(np.arctan(img_imag_ft[i+1] / img_real_ft[i+1]))
-                phase_angle[u][v][2] = np.uint8(np.arctan(img_imag_ft[i+2] / img_real_ft[i+2]))
-
-    save_image(magnitude, img_name+' - Magnitude.png')
-    save_image(phase_angle, img_name+' - Phase_angle.png')
-
     return img_real_ft, img_imag_ft
 
 

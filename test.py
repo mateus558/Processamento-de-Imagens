@@ -6,9 +6,10 @@ from ErrorMetrics import *
 from ColorSpaceTransformation import *
 from ImageOperations import *
 import matplotlib
+from Compression import *
 
-#img_name = 'cat'
-img_name = 'lena'
+img_name = 'cat'
+#img_name = 'lena'
 
 #img_name_in = img_name+'.png'
 img_name_in = img_name+'.jpg'
@@ -17,6 +18,20 @@ channels = 3
 img = open_image(img_name_in, channels)
 img = pil_to_np(img)
 
+
+#Test Cosine
+
+img_out = cosine_transform(img)
+img_out2 = np.uint8(img_out)
+save_image(img_out2, img_name+' - Cosine_transform_out.png')
+
+img_out = inverse_cosine_transform(img_out)
+save_image(img_out, img_name+' - Inverse_cosine_transform_out.png')
+
+mean_square_error(img, img_out, img.shape[2])
+signal_to_noise_ration(img, img_out, img.shape[2])
+
+'''
 #Test filters
 
 gauss_filter = np.array(gaussian_filter_generator(shape=(9,9),sigma=1));
@@ -40,6 +55,7 @@ save_image(fimg, "wiki_roberts_filter.png")
 
 fimg = high_pass_filter(img, selected=3,channels=channels)
 save_image(fimg, "wiki_laplacian_filter.png")
+'''
 
 '''
 #Shannon-Whitaker

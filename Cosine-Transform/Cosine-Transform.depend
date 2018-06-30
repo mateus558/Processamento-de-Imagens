@@ -44,18 +44,18 @@
 1528826504 d:\documentos\github\trabalho-1-de-processamento-de-imagens\fourier-transform\main.h
 	<stdlib.h>
 
-1529796446 source:d:\documentos\github\trabalho-1-de-processamento-de-imagens\cosine-transform\cosine-transform.cpp
+1530324840 source:d:\documentos\github\trabalho-1-de-processamento-de-imagens\cosine-transform\cosine-transform.cpp
 	"Cosine-Transform.h"
 	<iostream>
 	<stdlib.h>
 	<math.h>
 
-1529796461 d:\documentos\github\trabalho-1-de-processamento-de-imagens\cosine-transform\cosine-transform.h
+1530324877 d:\documentos\github\trabalho-1-de-processamento-de-imagens\cosine-transform\cosine-transform.h
 
-1529796358 source:d:\documentos\github\trabalho-1-de-processamento-de-imagens\cosine-transform\main.c
+1530324855 source:d:\documentos\github\trabalho-1-de-processamento-de-imagens\cosine-transform\main.c
 	"Cosine-Transform.h"
 	"main.h"
 
-1529796499 d:\documentos\github\trabalho-1-de-processamento-de-imagens\cosine-transform\main.h
+1530324877 d:\documentos\github\trabalho-1-de-processamento-de-imagens\cosine-transform\main.h
 	<stdlib.h>
 
