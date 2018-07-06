@@ -1,11 +1,11 @@
 EXPORTS
     Cosine_transform @1
     Inverse_cosine_transform @2
-    _Z16cosine_transformPiiiPd @3
+    _Z16cosine_transformPiPd @3
     _Z24inverse_cosine_transformPdPi @4
     _Z4initv @5
     _get_output_format @6
     channels @7 DATA
     f @8 DATA
-    height_aux @9 DATA
-    width_aux @10 DATA
+    height @9 DATA
+    width @10 DATA
