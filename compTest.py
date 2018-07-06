@@ -1,12 +1,13 @@
 from Compression import *
 from Utils import *
 
-channels = 3
+channels = 1
 
 img = pil_to_np(open_image("cat.jpg", channels));
-print(img.shape)
 huffcoding = HuffmanCode()
 code = huffcoding.encode(img)
-huffcoding.save("cu", code)
-
+#huffcoding.save("boi", code)
+#huffcoding.open('oi')
+#dimg = huffcoding.decode(code)
+#show_image_np(dimg, channels)
 
