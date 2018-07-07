@@ -9,30 +9,20 @@ import os
 from ctypes import *
 
 def rgb2ycbcr(im):
-    cbcr = np.empty_like(im)
-    r = im[:,:,0]
-    g = im[:,:,1]
-    b = im[:,:,2]
-    # Y
-    cbcr[:,:,0] = .299 * r + .587 * g + .114 * b
-    # Cb
-    cbcr[:,:,1] = 128 - .169 * r - .331 * g + .5 * b
-    # Cr
-    cbcr[:,:,2] = 128 + .5 * r - .419 * g - .081 * b
-    return np.uint8(cbcr)
+	xform = np.array([[.299, .587, .114], [-.1687, -.3313, .5], [.5, -.4187, -.0813]])
+	ycbcr = im.dot(xform.T)
+	ycbcr[:,:,[1,2]] += 128
+	
+	return ycbcr
 
 def ycbcr2rgb(im):
-    rgb = np.empty_like(im)
-    y   = im[:,:,0]
-    cb  = im[:,:,1] - 128
-    cr  = im[:,:,2] - 128
-    # R
-    rgb[:,:,0] = y + 1.402 * cr
-    # G
-    rgb[:,:,1] = y - .34414 * cb - .71414 * cr
-    # B
-    rgb[:,:,2] = y + 1.772 * cb
-    return np.uint8(rgb)
+	xform = np.array([[1, 0, 1.402], [1, -0.34414, -.71414], [1, 1.772, 0]])
+	rgb = im.astype(np.float)
+	rgb[:,:,[1,2]] -= 128
+	rgb = rgb.dot(xform.T)
+	np.putmask(rgb, rgb > 255, 255)
+	np.putmask(rgb, rgb < 0, 0)
+	return np.uint8(rgb)
 
 dll = CDLL('Cosine-Transform/bin/Debug/libCosine-Transform.dll')
 
@@ -229,7 +219,9 @@ class HuffmanCode:
 			print("Need to provide a image to encode!")
 			return ;
 		print(image.shape)
-		image = ycbcr2rgb(image)
+
+		flatten = np.asarray(image).reshape(-1)
+		
 		self.cols = image.shape[1]
 		self.rows = image.shape[0]
 		
@@ -242,23 +234,15 @@ class HuffmanCode:
 			sdepth = '11'
 		
 		srows = str("{0:0b}".format(self.rows))
-		
 		for i in range(len(srows), 16):
 			srows = "0" + srows
-		scols = str("{0:0b}".format(self.cols))
-		
+
+		scols = str("{0:0b}".format(self.cols))		
 		for i in range(len(scols), 16):
 			scols = "0" + scols
 		info = sdepth + srows + scols
 		self.infobits += len(info)
 		
-		flatten = np.zeros(self.rows*self.cols*self.depth, dtype = np.uint8)
-		
-		for i in range(self.rows):
-			for j in range(self.cols):
-				for c in range(self.depth):
-					flatten[i + self.cols*(j + self.depth*c)] = image[i, j, c]
-
 		self.image = flatten
 		self.createHuffTree(self.image)
 		print("Huffman tree created.")
@@ -335,7 +319,6 @@ class HuffmanCode:
 				pixels.append(self.mapping[cod])
 				cod = ''
 		'''
-		print(pixels[:100])
 		#for byte in self.codes_array:
 		 #   pixels.append(self.mapping[byte])
 		if self.depth == 1:		
@@ -343,10 +326,11 @@ class HuffmanCode:
 				for j in range(self.cols):
 					img[i, j] = pixels[i*self.rows + j]
 		else:
-			for i in range(self.rows):
-				for j in range(self.cols):
-					for c in range(self.depth):
-						img[i, j, c] = pixels[i + self.cols*(j + self.depth*c)]
-
+			for x in range(self.rows):
+				for y in range(self.cols):
+					index = (x*self.cols*self.depth)+(y*self.depth)
+					img[x, y, 0] = pixels[index]
+					img[x, y, 1] = pixels[index+1]
+					img[x, y, 2] = pixels[index+2]
 		
-		return rgb2ycbcr(img) 
+		return img 
