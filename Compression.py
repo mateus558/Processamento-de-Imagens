@@ -8,6 +8,16 @@ import bitarray
 import os
 from ctypes import *
 
+def entropy(frequency):
+    sum = 0
+    entropy = 0
+    for key, freq in frequency.items():
+        sum += freq
+    for key, freq in frequency.items():
+        px = freq / sum
+        entropy += px * np.log2(px)
+    return -1*entropy;
+
 def rgb2ycbcr(im):
     xform = np.array([[.299, .587, .114], [-.1687, -.3313, .5], [.5, -.4187, -.0813]])
     ycbcr = im.dot(xform.T)
@@ -156,11 +166,12 @@ class HuffmanCode:
         self.codes_array = []
         self.depth = 0
         self.infobits = 0
+        self.frequency = None
     
     def createHuffTree(self, flatten_image = None):
-        frequency = collections.Counter(flatten_image)
+        self.frequency = collections.Counter(flatten_image)
 
-        for key, freq in frequency.items():
+        for key, freq in self.frequency.items():
             heapq.heappush(self.Q, HuffNode(left = None, right = None, pixel = key, freq = freq))
                 
         while len(self.Q) > 1 :
@@ -170,7 +181,7 @@ class HuffmanCode:
             heapq.heappush(self.Q, z) 
         self.root = heapq.heappop(self.Q)
         
-    def createCodingAux(self, root, code, top):
+    def createCodingAux(self, root, top):
         if root is None:
             return
         if not root.left and not root.right:
@@ -179,53 +190,25 @@ class HuffmanCode:
                 code = code + "{0}".format(self.codes_[i])
             self.codes[root.pixel] = code
             self.mapping[code] = root.pixel
-            code = ""
             return;
     
         if root.left:
             self.codes_[top] = 0
-            self.createCodingAux(root.getLeft(), code, top + 1)
+            self.createCodingAux(root.getLeft(), top + 1)
         if root.right:
             self.codes_[top] = 1
-            self.createCodingAux(root.getRight(), code, top + 1)
+            self.createCodingAux(root.getRight(), top + 1)
 
     def createCoding(self):
-        code = ""
         top = 0
-        self.createCodingAux(self.root, code, top)
+        self.createCodingAux(self.root, top)
 
     def save(self, fname, code):
         newFile = open(fname+".msw", "wb")
         newFile.write(bytes(code))
         print("Binary written to file.")
     
-    def open(self, fname):
-        
-        with open(fname+".msw", "rb") as binary_file:
-            bit_string = ""
-            
-            byte = binary_file.read(1)
-            while(len(byte) != 0):
-                byte = ord(byte)
-                bits = bin(byte)[2:].rjust(8, '0')
-                bit_string += bits
-                byte = binary_file.read(1)
-            padded_info = bit_string[:8]
-            extra_padding = int(padded_info, 2)
-            padded_encoded_text = bit_string[8:]
-            encoded_text = bit_string[:-1*extra_padding]
-        
-        print("Binary read from file.")
-        
-        return encoded_text
-
-    def encode(self, image = None):
-        if image is None or len(image) < 2:
-            print("Need to provide a image to encode!")
-            return ;
-        
-        flatten = np.asarray(image).reshape(-1)
-        
+    def encode_img_info(self, image = None):
         self.cols = image.shape[1]
         self.rows = image.shape[0]
         
@@ -244,8 +227,15 @@ class HuffmanCode:
         scols = str("{0:0b}".format(self.cols))		
         for i in range(len(scols), 16):
             scols = "0" + scols
-        info = sdepth + srows + scols
-        self.infobits += len(info)
+        
+        return sdepth + srows + scols
+
+    def encode(self, image = None):
+        if image is None or len(image) < 2:
+            print("Need to provide a image to encode!")
+            return ;
+        
+        flatten = np.asarray(image).reshape(-1)
         
         self.image = flatten
         self.createHuffTree(self.image)
@@ -254,22 +244,31 @@ class HuffmanCode:
         print("Huffman code created.")
         
         print("Encoding image.")
+
         for pixel in self.image:
             code = self.codes[pixel]
             self.encodedText += code
             self.codes_array.append(code)
-        
-        self.encodedText = info + self.encodedText
+
+        img_info = self.encode_img_info(image)
         extra_padding = 8 - len(self.encodedText) % 8
+        padded_info = "{0:08b}".format(extra_padding)
+
         for i in range(extra_padding):
             self.encodedText += "0"
-        self.infobits += extra_padding           
-    
-        padded_info = "{0:08b}".format(extra_padding)
-        self.encodedText = padded_info + self.encodedText
-        self.infobits += len(padded_info)
+   
+        self.encodedText = padded_info + img_info + self.encodedText
+        self.infobits += len(padded_info) + extra_padding + len(img_info)
+
         print("Image encoded.")
-       
+        
+        print()
+        size = self.rows*self.cols*self.depth
+        print("Image Entropy: {0}".format(entropy(self.frequency)))
+        print("Average number of bits by pixel: {0}".format(len(self.encodedText)/(size)))
+        print("Compression rate: {0}%".format((1-len(self.encodedText)/(size*8))*100))
+        print()
+        
         print("Creating binary.")
         b = bytearray()
         for i in range(0, len(self.encodedText), 8):
@@ -285,21 +284,35 @@ class HuffmanCode:
             string += '{0:08b}'.format(byte)
         return string
 
-    def decode(self, code):
-        img = []
+    def open(self, fname):
         
-        padded_info = code[0]
-        extra_padding = padded_info
-        padded_encoded_text = code[8:]
-        encoded_text = self.bytearray2string(code[:-1*extra_padding])[6:]
+        with open(fname+".msw", "rb") as binary_file:
+            bit_string = ""
+            
+            byte = binary_file.read(1)
+            while(len(byte) != 0):
+                byte = ord(byte)
+                bits = bin(byte)[2:].rjust(8, '0')
+                bit_string += bits
+                byte = binary_file.read(1)
+            padded_info = bit_string[:8]
+            extra_padding = int(padded_info, 2)
+            padded_encoded_text = bit_string[8:]
+            encoded_text = bit_string[:-1*extra_padding][6:]
+        
+        print("Binary read from file.")
+        
+        return encoded_text
 
+    def decode(self, encoded_text):
         img_info = encoded_text[2:36]
         encoded_text = encoded_text[36:]
 
         self.depth = int(img_info[:2],2)
         self.rows = int(img_info[2:18],2)
         self.cols = int(img_info[18:36],2)
-        
+
+        img = []        
         if self.depth > 1:
             img = np.zeros((self.rows, self.cols, self.depth), dtype = np.uint8)
         else:
