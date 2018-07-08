@@ -163,7 +163,6 @@ class HuffmanCode:
         self.encodedText = ''
         self.rows = 0
         self.cols = 0
-        self.codes_array = []
         self.depth = 0
         self.infobits = 0
         self.frequency = None
@@ -202,11 +201,6 @@ class HuffmanCode:
     def createCoding(self):
         top = 0
         self.createCodingAux(self.root, top)
-
-    def save(self, fname, code):
-        newFile = open(fname+".msw", "wb")
-        newFile.write(bytes(code))
-        print("Binary written to file.")
     
     def encode_img_info(self, image = None):
         self.cols = image.shape[1]
@@ -248,7 +242,6 @@ class HuffmanCode:
         for pixel in self.image:
             code = self.codes[pixel]
             self.encodedText += code
-            self.codes_array.append(code)
 
         img_info = self.encode_img_info(image)
         extra_padding = 8 - len(self.encodedText) % 8
@@ -258,23 +251,20 @@ class HuffmanCode:
             self.encodedText += "0"
    
         self.encodedText = padded_info + img_info + self.encodedText
-        self.infobits += len(padded_info) + extra_padding + len(img_info)
-
+        self.infobits += len(padded_info) + len(img_info)
         print("Image encoded.")
-        
-        print()
+
         size = self.rows*self.cols*self.depth
-        print("Image Entropy: {0}".format(entropy(self.frequency)))
+        print("\nImage Entropy: {0}".format(entropy(self.frequency)))
         print("Average number of bits by pixel: {0}".format(len(self.encodedText)/(size)))
-        print("Compression rate: {0}%".format((1-len(self.encodedText)/(size*8))*100))
-        print()
+        print("Compression rate: {0}%\n".format((1-len(self.encodedText)/(size*8))*100))
         
-        print("Creating binary.")
+        print("Creating binary string.")
         b = bytearray()
         for i in range(0, len(self.encodedText), 8):
             byte = self.encodedText[i:i+8]
             b.append(int(byte, 2))
-        print("Binary created.")
+        print("Binary string created.")
 
         return b        
 
@@ -283,6 +273,11 @@ class HuffmanCode:
         for byte in _bytearray:
             string += '{0:08b}'.format(byte)
         return string
+
+    def save(self, fname, code):
+        newFile = open(fname+".msw", "wb")
+        newFile.write(bytes(code))
+        print("Binary written to file.")
 
     def open(self, fname):
         
@@ -300,7 +295,7 @@ class HuffmanCode:
             padded_encoded_text = bit_string[8:]
             encoded_text = bit_string[:-1*extra_padding][6:]
         
-        print("Binary read from file.")
+        print("Binary string read from file.")
         
         return encoded_text
 
@@ -319,7 +314,7 @@ class HuffmanCode:
             img = np.zeros((self.rows, self.cols), dtype = np.uint8)
         
         pixels = []
-        path = self.encodedText[42:]
+        path = self.encodedText[self.infobits:]
         current_code = ""
         decoded_text = ""
         
