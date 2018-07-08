@@ -1,0 +1,9 @@
+EXPORTS
+    append @1
+    decode @2
+    encode @3
+    ht_create @4
+    ht_get @5
+    ht_hash @6
+    ht_newpair @7
+    ht_set @8

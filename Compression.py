@@ -129,6 +129,12 @@ def inverse_cosine_transform(img_np, channels=3):
 
     return img_out
 
+def hash(string):
+    x = ord(string[0]) << 7
+    for chr in string[1:]:
+        x = ((1000003 * x) ^ ord(chr)) & (1<<32))
+    return x
+
 class HuffNode:
     def __init__(self, pixel = None, left = None, right = None, freq = None):
         self.left = left
@@ -239,6 +245,7 @@ class HuffmanCode:
         
         print("Encoding image.")
 
+        
         for pixel in self.image:
             code = self.codes[pixel]
             self.encodedText += code
