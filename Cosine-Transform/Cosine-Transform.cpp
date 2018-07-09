@@ -21,7 +21,7 @@ void init(){
     }
 }
 
-void cosine_transform(int* img, double* img_out){
+void cosine_transform(double* img, double* img_out){
     init();
 
     int indice;
@@ -64,7 +64,7 @@ void cosine_transform(int* img, double* img_out){
     }
 }
 
-void inverse_cosine_transform(double* f_in, int* img){
+void inverse_cosine_transform(double* f_in, double* img){
     int indice;
     double division_x, division_y;
     double C_u, C_v;

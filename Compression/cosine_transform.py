@@ -1,20 +1,9 @@
-from Utils import *
-from ErrorMetrics import *
-from ctypes import *
-from Compression.cosine_transform import *
-from Compression.quantization import *
-from Compression.zig_zag_scan import *
-from Compression.dcmp import *
-from Compression.huffman import *
+import numpy as np
 
 block_size = 8
 
-dll = CDLL('Cosine-Transform/bin/Debug/libCosine-Transform.dll')
-
-def encode(img):
-    img_coverted = rgb_to_ycbcr(img)
-
-    channels = img_coverted.shape[2]
+def cosine_transform(img, block_size=8, do_quantization=True, do_zig_zag_scan=True, do_DCPM=True):
+    channels = img.shape[2]
     size = block_size * block_size * channels
 
     img_in_dct = [0] * size
@@ -23,13 +12,13 @@ def encode(img):
     img_out_dct = [0.0] * size
     img_out_dct = (c_double * size) (*img_out_dct)
 
-    h = img_coverted.shape[0]
-    w = img_coverted.shape[1]
+    h = img.shape[0]
+    w = img.shape[1]
 
     mod_height = h % block_size
     mod_width  = w % block_size
 
-    img_compress = np.zeros((h, w, channels), dtype=np.float)
+    img_out = np.zeros((img.shape[0], img.shape[1], img.shape[2]), dtype=np.float)
 
     for i in range(0, h + mod_height, block_size):
         for j in range(0, w + mod_width, block_size):
@@ -38,21 +27,20 @@ def encode(img):
                 for y in range(block_size):
                     k = (x*block_size*channels) + (y*channels)
 
-                    if(x+i < h and y+j < w):
-                        img_in_dct[k]   = img_coverted[x+i][y+j][0]
-                        img_in_dct[k+1] = img_coverted[x+i][y+j][1]
-                        img_in_dct[k+2] = img_coverted[x+i][y+j][2]
+                    if(x+i < img.shape[0] and y+j < img.shape[1]):
+                        img_in_dct[k]   = img[x+i][y+j][0]
+                        img_in_dct[k+1] = img[x+i][y+j][1]
+                        img_in_dct[k+2] = img[x+i][y+j][2]
 
                     else:
                         img_in_dct[k]   = 0.0
                         img_in_dct[k+1] = 0.0
                         img_in_dct[k+2] = 0.0
 
-
             dll.Cosine_transform(img_in_dct, img_out_dct)
 
 
-            img_out_dct_aux = np.zeros((block_size, block_size, channels), dtype=np.float)
+            img_out_dct_aux = np.zeros((block_size, block_size, img.shape[2]), dtype=np.float)
 
             for x in range(block_size):
                 for y in range(block_size):
@@ -61,25 +49,27 @@ def encode(img):
                     img_out_dct_aux[x][y][1] = img_out_dct[k+1]
                     img_out_dct_aux[x][y][2] = img_out_dct[k+2]
 
+            if(do_quantization):
+                img_out_dct_aux = quantization(img_out_dct_aux, block_size, inverse=False)
 
-            img_out_dct_aux = quantization(img_out_dct_aux, block_size, inverse=False)
+            if(do_zig_zag_scan):
+                img_out_dct_aux = zigzag(img_out_dct_aux)
+                img_out_dct_aux = np.reshape(img_out_dct_aux, (block_size, block_size, channels))
 
-
-            img_out_dct_aux = zigzag(img_out_dct_aux)
-            img_out_dct_aux = np.reshape(img_out_dct_aux, (block_size, block_size, channels))
-
-            img_out_dct_aux[0][0][:] = DCPM(img_out_dct_aux[0][0][:])
+            if(i == 0 and j == 0 and do_DCPM):
+                out = DCPM(img_out_dct_aux, channels)
 
             for x in range(block_size):
                 for y in range(block_size):
-                    if(x+i < h and y+j < w):
-                        img_compress[x+i][y+j][0] = img_out_dct_aux[x][y][0]
-                        img_compress[x+i][y+j][1] = img_out_dct_aux[x][y][1]
-                        img_compress[x+i][y+j][2] = img_out_dct_aux[x][y][2]
+                    if(x+i < img.shape[0] and y+j < img.shape[1]):
+                        img_out[x+i][y+j][0] = img_out_dct_aux[x][y][0]
+                        img_out[x+i][y+j][1] = img_out_dct_aux[x][y][1]
+                        img_out[x+i][y+j][2] = img_out_dct_aux[x][y][2]
 
-    return img_compress
+    return img_out
 
-def decode(img):
+
+def inverse_cosine_transform(img, do_inverse_quantization=True, do_inverse_zig_zag_scan=True, do_inverse_DCPM=True):
     channels = img.shape[2]
     size = block_size * block_size * channels
 
@@ -95,9 +85,9 @@ def decode(img):
     mod_height = h % block_size
     mod_width  = w % block_size
 
-    img_decoded = np.zeros((h, w, channels), dtype=np.float)
+    img_out = np.zeros((img.shape[0], img.shape[1], img.shape[2]), dtype=np.float)
 
-    block = np.zeros((block_size, block_size, channels), dtype=np.float)
+    block = np.zeros((img.shape[0], img.shape[1], img.shape[2]), dtype=np.float)
 
 
     for i in range(0, h + mod_height, block_size):
@@ -107,7 +97,7 @@ def decode(img):
                 for y in range(block_size):
                     k = (x*block_size*channels) + (y*channels)
 
-                    if(x+i < h and y+j < w):
+                    if(x+i < img.shape[0] and y+j < img.shape[1]):
                         block[x][y][0] = img[x+i][y+j][0]
                         block[x][y][1] = img[x+i][y+j][1]
                         block[x][y][2] = img[x+i][y+j][2]
@@ -117,13 +107,12 @@ def decode(img):
                         block[x][y][1] = 0.0
                         block[x][y][2] = 0.0
 
+            if(do_inverse_zig_zag_scan):
+                block_aux = inverse_zigzag(block.flatten(), block_size, block_size)
+                block = np.reshape(block_aux, (block_size, block_size, channels)) 
 
-            block[0][0][:] = inverse_DCPM(block[0][0][:])
-
-            block_aux = inverse_zigzag(block.flatten(), block_size, block_size)
-            block = np.reshape(block_aux, (block_size, block_size, channels)) 
-
-            block = quantization(block, inverse=True)
+            if(do_inverse_quantization):
+                block = quantization(block, inverse=True)
 
             for x in range(block_size):
                 for y in range(block_size):
@@ -143,31 +132,14 @@ def decode(img):
                     block[x][y][1] = img_out_dct[k+1]
                     block[x][y][2] = img_out_dct[k+2]
 
+            if(i == 0 and j == 0):
+                print(block)
+
             for x in range(block_size):
                 for y in range(block_size):
-                    if(x+i < h and y+j < w):
-                        img_decoded[x+i][y+j][0] = block[x][y][0]
-                        img_decoded[x+i][y+j][1] = block[x][y][1]
-                        img_decoded[x+i][y+j][2] = block[x][y][2]
+                    if(x+i < img.shape[0] and y+j < img.shape[1]):
+                        img_out[x+i][y+j][0] = block[x][y][0]
+                        img_out[x+i][y+j][1] = block[x][y][1]
+                        img_out[x+i][y+j][2] = block[x][y][2]
 
-    img_converted = ycbcr_to_rgb(img_decoded)
-
-    return img_converted
-
-
-img_name = 'lena'
-img_name_in = img_name+'.jpg'
-
-img = open_image(img_name_in, 3)
-
-img = pil_to_np(img)
-
-img_coded = encode(img)
-
-img_decoded = decode(img_coded)
-
-print()
-signal_to_noise_ration(img, img_decoded, channels=3)
-print()
-
-save_image(img_decoded, img_name+' - Inverse_cosine_transform_out_2.png')
+    return img_out
