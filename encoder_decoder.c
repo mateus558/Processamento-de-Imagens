@@ -9,6 +9,7 @@
 #include "encoder_decoder.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <limits.h>
 #include <string.h>
 
@@ -163,26 +164,42 @@ int  append(char *s, size_t size, char c) {
      return 0;
 }
 
-/*int main( int argc, char **argv ) {
+int main( int argc, char **argv ) {
     int pix[] = {0, 1, 2}, i = 0;
     char *codes[3];
     char *encoded;
-	int *decoded = malloc(9 * sizeof(int));
-    int symbols[4];
-    int img[] = {0, 1, 2, 3, 2, 1, 3, 2, 0};
-    for(int i = 0; i < 4; i++){symbols[i] = i;}
+    int symbols[15];
+    int img[7500];
+    for(int i = 0; i < 15; i++){symbols[i] = i;}
+	for(int i = 0; i < 7500; i++){img[i] = (i%15); }
     codes[0] = "0001";
     codes[1] = "0010";
     codes[2] = "0011";
     codes[3] = "0100";
+	codes[4] = "0101";
+	codes[5] = "0110";
+	codes[6] = "0111";
+	codes[7] = "1000";
+	codes[8] = "1001";
+    codes[9] = "1010";
+    codes[10] = "1011";
+    codes[11] = "1100";
+	codes[12] = "1101";
+	codes[13] = "1110";
+	codes[14] = "1111";
+	printf("Encoding.\n");
+    encode(codes, img, 50, 50, 3, &encoded);
+    printf("%s bits.\n", strlen(encoded));
+		int *decoded = malloc(7500 * sizeof(int));
+		for(int i = 0; i < 7500; i++){decoded[i] = -1;}
 
-    encode(codes, img, 3, 3, 1, &encoded);
-    printf("%s\n", encoded);
-	decode(codes, symbols, encoded, decoded, 9, 4);
-    for(int i = 0; i < 9; i++){ printf("%d\n", decoded[i]);}
-
+	printf("Decoding.\n");			
+	
+	decode(codes, symbols, encoded, decoded, 7500, 15);
+    for(int i = 0; i < 7500; i++){ printf("%d ", decoded[i]);}
+	printf("\n");
 	return 0;
-}*/
+}
 
 void encode(char** codes, int* img, int height, int width, int depth, char** encoded){
     size_t i, size, len = 0, size_str = sizeof(char)*15, nexp = 0;
@@ -214,7 +231,7 @@ void encode(char** codes, int* img, int height, int width, int depth, char** enc
 void decode(char** codes, int* symbols, char* code, int* decoded, int decodedsize, int nsymbols){
     hashtable_t *hashtable = ht_create(65536);
     size_t i = 0, j = 0, len = 0, codesize = strlen(code);
-	char current_code[codesize];
+	char current_code[15];
 	int value;
 
     if(decoded == NULL){
@@ -235,8 +252,8 @@ void decode(char** codes, int* symbols, char* code, int* decoded, int decodedsiz
         append(current_code, codesize, code[i]);
 
         value = ht_get(hashtable, current_code);
+		decoded[j] = value;
         if(value != -1){
-            decoded[j] = value;
             j++;
             if(j % decodedsize == 0){
                 if(i < codesize-1)

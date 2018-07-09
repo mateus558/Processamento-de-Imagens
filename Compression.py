@@ -18,22 +18,6 @@ def entropy(frequency):
         entropy += px * np.log2(px)
     return -1*entropy;
 
-def rgb2ycbcr(im):
-    xform = np.array([[.299, .587, .114], [-.1687, -.3313, .5], [.5, -.4187, -.0813]])
-    ycbcr = im.dot(xform.T)
-    ycbcr[:,:,[1,2]] += 128
-    
-    return ycbcr
-
-def ycbcr2rgb(im):
-    xform = np.array([[1, 0, 1.402], [1, -0.34414, -.71414], [1, 1.772, 0]])
-    rgb = im.astype(np.float)
-    rgb[:,:,[1,2]] -= 128
-    rgb = rgb.dot(xform.T)
-    np.putmask(rgb, rgb > 255, 255)
-    np.putmask(rgb, rgb < 0, 0)
-    return np.uint8(rgb)
-
 dll = CDLL('Cosine-Transform/bin/Debug/libCosine-Transform.dll')
 
 def cosine_transform(img_np, channels=3, filter=0, radius1=10, radius2=5, img_name='out'):
@@ -128,12 +112,6 @@ def inverse_cosine_transform(img_np, channels=3):
                         img_out[x+i][y+j][2] = np.uint8(img_out_dct[k+2])
 
     return img_out
-
-def hash(string):
-    x = ord(string[0]) << 7
-    for chr in string[1:]:
-        x = ((1000003 * x) ^ ord(chr)) & (1<<32))
-    return x
 
 class HuffNode:
     def __init__(self, pixel = None, left = None, right = None, freq = None):
@@ -238,14 +216,14 @@ class HuffmanCode:
         flatten = np.asarray(image).reshape(-1)
         
         self.image = flatten
+        print("Creating Huffman tree...")
         self.createHuffTree(self.image)
         print("Huffman tree created.")
+        print("Creating Huffman code...")
         self.createCoding()
         print("Huffman code created.")
         
-        print("Encoding image.")
-
-        
+        print("Encoding image...")
         for pixel in self.image:
             code = self.codes[pixel]
             self.encodedText += code
@@ -258,6 +236,7 @@ class HuffmanCode:
             self.encodedText += "0"
    
         self.encodedText = padded_info + img_info + self.encodedText
+        print(padded_info+img_info)
         self.infobits += len(padded_info) + len(img_info)
         print("Image encoded.")
 
@@ -273,6 +252,7 @@ class HuffmanCode:
             b.append(int(byte, 2))
         print("Binary string created.")
 
+
         return b        
 
     def bytearray2string(self, _bytearray):
@@ -285,6 +265,12 @@ class HuffmanCode:
         newFile = open(fname+".msw", "wb")
         newFile.write(bytes(code))
         print("Binary written to file.")
+
+        with open('mapping_{0}.dict'.format(fname), 'w') as file:
+            for key, item in self.mapping.items():
+                file.write("{0}:{1}\n".format(key, item))
+        print("Dictionary saved.")
+
 
     def open(self, fname):
         
@@ -301,8 +287,15 @@ class HuffmanCode:
             extra_padding = int(padded_info, 2)
             padded_encoded_text = bit_string[8:]
             encoded_text = bit_string[:-1*extra_padding][6:]
-        
         print("Binary string read from file.")
+
+        with open('mapping_{0}.dict'.format(fname), 'r') as dictfile:
+            content = dictfile.readlines()
+        content = [x.strip() for x in content] 
+        for line in content:
+            key, value = line.split(":", 1)
+            self.mapping[key] = np.uint8(value)    
+        print("Mapping dictionary read from file.")
         
         return encoded_text
 
@@ -321,17 +314,18 @@ class HuffmanCode:
             img = np.zeros((self.rows, self.cols), dtype = np.uint8)
         
         pixels = []
-        path = self.encodedText[self.infobits:]
+        path = encoded_text
+        print([len(path), len(self.encodedText)])
         current_code = ""
         decoded_text = ""
-        
+
         for bit in path:
             current_code += bit
             if(current_code in self.mapping):
                 scalar = self.mapping[current_code]
                 pixels.append(scalar)
                 current_code = ""
-        
+
         if self.depth == 1:		
             for i in range(self.rows):
                 for j in range(self.cols):
