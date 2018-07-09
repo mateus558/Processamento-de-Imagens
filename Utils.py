@@ -16,6 +16,32 @@ if not os.path.exists(pathname_image_out):
     os.makedirs(pathname_image_out)
 
 
+def rgb_to_ycbcr(img):
+    xform = np.array([[ 0.299,   0.587,   0.114],
+                      [-0.1687, -0.3313,  0.5],
+                      [ 0.5,    -0.4187, -0.0813]])
+
+    ycbcr = img.dot(xform.T)
+    ycbcr[:, :, [1,2]] += 128.0
+    
+    return ycbcr
+
+
+def ycbcr_to_rgb(img):
+    xform = np.array([[1.0,  0.0,      1.402],
+                      [1.0, -0.34414, -0.71414],
+                      [1.0,  1.772,    0.0]])
+
+    rgb = img.astype(np.float)
+    rgb[:, :, [1,2]] -= 128.0
+
+    rgb = rgb.dot(xform.T)
+    np.putmask(rgb, rgb > 255, 255)
+    np.putmask(rgb, rgb < 0,   0)
+
+    return np.uint8(rgb)
+
+
 def open_image(img_name, channels):
     img = Image.open(os.path.join(pathname_image_in, img_name))
 
