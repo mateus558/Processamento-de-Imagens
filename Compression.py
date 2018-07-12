@@ -9,9 +9,9 @@ from Compression.huffman import *
 
 block_size = 8
 
-dll = CDLL('Cosine-Transform/bin/Debug/libCosine-Transform.dll')
 
 def encode(img):
+    dll = CDLL('Cosine-Transform/bin/Debug/libCosine-Transform.dll')
     img_coverted = rgb_to_ycbcr(img)
 
     channels = img_coverted.shape[2]
@@ -80,6 +80,8 @@ def encode(img):
     return img_compress
 
 def decode(img):
+    dll = CDLL('Cosine-Transform/bin/Debug/libCosine-Transform.dll')
+
     channels = img.shape[2]
     size = block_size * block_size * channels
 
@@ -128,7 +130,7 @@ def decode(img):
             for x in range(block_size):
                 for y in range(block_size):
                     k = (x*block_size*channels) + (y*channels)
-
+            
                     img_in_dct[k]   = block[x][y][0]
                     img_in_dct[k+1] = block[x][y][1]
                     img_in_dct[k+2] = block[x][y][2]
@@ -155,19 +157,40 @@ def decode(img):
     return img_converted
 
 
-img_name = 'lena'
+def compress(img, img_name):
+    img_coded = encode(img)
+    huffman = HuffmanCode()
+    bin = huffman.encode(img_coded)
+    rate = len(bin)/(img.shape[0]*img.shape[1]*img.shape[2]*8)
+    print("Compress rate: {0} - {1}:1".format((1-rate)*100, 1/rate))
+    huffman.save(img_name, bin)
+
+
+def decompress(img_name):
+    huffman = HuffmanCode()
+    bin = huffman.open(img_name)
+    img_coded = huffman.decode(bin)
+    print(img_coded)
+    img_decoded = decode(img_coded)
+    signal_to_noise_ration(img, img_decoded, channels=3)
+    save_image(img_decoded, img_name+' - Inverse_cosine_transform_out_2_huff.png')    
+    
+    return img_decoded
+
+img_name = 'cat'
 img_name_in = img_name+'.jpg'
+huffman = HuffmanCode()
+
 
 img = open_image(img_name_in, 3)
-
 img = pil_to_np(img)
-
-img_coded = encode(img)
-
+compress(img, img_name)
+'''code = huffman.open(img_name)
+img_coded = huffman.decode(code)
 img_decoded = decode(img_coded)
-
-print()
 signal_to_noise_ration(img, img_decoded, channels=3)
+show_image_np(img_decoded, 3)
+save_image(img_decoded, img_name+' - Inverse_cosine_transform_out_2_huff.png')    
+'''
+#show_image_np(img_decoded, 3)
 print()
-
-save_image(img_decoded, img_name+' - Inverse_cosine_transform_out_2.png')

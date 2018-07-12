@@ -12,7 +12,6 @@ def entropy(frequency):
         entropy += px * np.log2(px)
     return -1*entropy
 
-
 class HuffNode:
     def __init__(self, pixel = None, left = None, right = None, freq = None):
         self.left = left
@@ -114,7 +113,7 @@ class HuffmanCode:
             return ;
         
         flatten = np.asarray(image).reshape(-1)
-        
+        print(flatten.shape)
         self.image = flatten
         print("Creating Huffman tree...")
         self.createHuffTree(self.image)
@@ -124,6 +123,7 @@ class HuffmanCode:
         print("Huffman code created.")
         
         print("Encoding image...")
+        print(flatten[-2:])
         for pixel in self.image:
             code = self.codes[pixel]
             self.encodedText += code
@@ -134,9 +134,8 @@ class HuffmanCode:
 
         for i in range(extra_padding):
             self.encodedText += "0"
-   
+        print(self.encodedText[-100:])
         self.encodedText = padded_info + img_info + self.encodedText
-        print(padded_info+img_info)
         self.infobits += len(padded_info) + len(img_info)
         print("Image encoded.")
 
@@ -168,25 +167,27 @@ class HuffmanCode:
 
         with open('mapping_{0}.dict'.format(fname), 'w') as file:
             for key, item in self.mapping.items():
-                file.write("{0}:{1}\n".format(key, item))
+                file.write("{0}:{1}\n".format(key, float(item)))
         print("Dictionary saved.")
 
 
     def open(self, fname):
-        
-        with open(fname+".msw", "rb") as binary_file:
-            bit_string = ""
-            
+        encoded_text = None
+        bit_string = ""
+        try:
+            binary_file = open(fname+".msw", "rb") 
+        except IOError:
+            print("Could not open file!")
+        byte = binary_file.read(1)
+        while(len(byte) != 0):
+            byte = ord(byte)
+            bits = bin(byte)[2:].rjust(8, '0')
+            bit_string += bits
             byte = binary_file.read(1)
-            while(len(byte) != 0):
-                byte = ord(byte)
-                bits = bin(byte)[2:].rjust(8, '0')
-                bit_string += bits
-                byte = binary_file.read(1)
-            padded_info = bit_string[:8]
-            extra_padding = int(padded_info, 2)
-            padded_encoded_text = bit_string[8:]
-            encoded_text = bit_string[:-1*extra_padding][6:]
+        padded_info = bit_string[:8]
+        extra_padding = int(padded_info, 2)
+        padded_encoded_text = bit_string[8:]
+        encoded_text = bit_string[:-1*(extra_padding)][6:]
         print("Binary string read from file.")
 
         with open('mapping_{0}.dict'.format(fname), 'r') as dictfile:
@@ -194,9 +195,8 @@ class HuffmanCode:
         content = [x.strip() for x in content] 
         for line in content:
             key, value = line.split(":", 1)
-            self.mapping[key] = np.uint8(value)    
+            self.mapping[key] = float(value)    
         print("Mapping dictionary read from file.")
-        
         return encoded_text
 
     def decode(self, encoded_text):
@@ -209,13 +209,12 @@ class HuffmanCode:
 
         img = []        
         if self.depth > 1:
-            img = np.zeros((self.rows, self.cols, self.depth), dtype = np.uint8)
+            img = np.zeros((self.rows, self.cols, self.depth), dtype = np.float)
         else:
-            img = np.zeros((self.rows, self.cols), dtype = np.uint8)
+            img = np.zeros((self.rows, self.cols), dtype = np.float)
         
         pixels = []
         path = encoded_text
-        print([len(path), len(self.encodedText)])
         current_code = ""
         decoded_text = ""
 
@@ -234,6 +233,8 @@ class HuffmanCode:
             for x in range(self.rows):
                 for y in range(self.cols):
                     index = (x*self.cols*self.depth)+(y*self.depth)
+                    if index+2 >= len(pixels):
+                        break;
                     img[x, y, 0] = pixels[index]
                     img[x, y, 1] = pixels[index+1]
                     img[x, y, 2] = pixels[index+2]

@@ -1,9 +1,10 @@
+
 from Compression import *
 from Utils import *
 import time
 
 channels = 3
-img_name = "lena"
+img_name = "cat"
 format = ".jpg"
 
 img = pil_to_np(open_image(img_name + format, channels));
